@@ -1,0 +1,22 @@
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+*.env
+
+backend/bin/
+backend/tmp/
+
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+.aws/
+credentials
+
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
