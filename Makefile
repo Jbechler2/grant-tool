@@ -8,3 +8,15 @@ run:
 
 clean:
 	rm -rf backend/bin/
+
+migrate-up:
+	goose -dir backend/migrations postgres "postgres://granttool:localdevpassword@localhost:5432/granttool?sslmode=disable" up
+
+migrate-down:
+	goose -dir backend/migrations postgres "postgres://granttool:localdevpassword@localhost:5432/granttool?sslmode=disable" down
+
+migrate-create:
+	goose -dir backend/migrations create $(name) sql
+
+generate:
+	cd backend && sqlc generate
