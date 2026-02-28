@@ -56,6 +56,19 @@ func (ns NullUserRole) Value() (driver.Value, error) {
 	return string(ns.UserRole), nil
 }
 
+type Client struct {
+	ID            uuid.UUID      `json:"id"`
+	GrantWriterID uuid.UUID      `json:"grant_writer_id"`
+	Name          string         `json:"name"`
+	ContactName   sql.NullString `json:"contact_name"`
+	ContactPhone  sql.NullString `json:"contact_phone"`
+	ContactEmail  sql.NullString `json:"contact_email"`
+	Notes         sql.NullString `json:"notes"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     sql.NullTime   `json:"deleted_at"`
+}
+
 type User struct {
 	ID           uuid.UUID    `json:"id"`
 	Email        string       `json:"email"`

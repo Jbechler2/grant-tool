@@ -11,8 +11,13 @@ import (
 )
 
 type Querier interface {
+	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteClient(ctx context.Context, arg DeleteClientParams) error
+	GetAllClientsByGrantWriter(ctx context.Context, grantWriterID uuid.UUID) ([]Client, error)
+	GetClientByID(ctx context.Context, arg GetClientByIDParams) (Client, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error
 }
 
