@@ -23,6 +23,8 @@ func main() {
 	queries := repository.New(database)
 	authService := service.NewAuthService(queries, cfg.JWTSecret, cfg.JWTExpiryMinutes)
 	authHandler := handler.NewAuthHandler(authService)
+	clientService := service.NewClientService(queries)
+	clientHandler := handler.NewClientHandler(clientService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -36,7 +38,13 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.NewJWTMiddleware(cfg.JWTSecret))
-		r.Get("/testing", nil)
+		r.Route("/api/v1", func(r chi.Router) {
+			r.Post("/clients", clientHandler.CreateClient)
+			r.Get("/clients", clientHandler.GetAllClients)
+			r.Get("/clients/{id}", clientHandler.GetClientByID)
+			r.Put("/clients/{id}", clientHandler.UpdateClient)
+			r.Delete("/clients/{id}", clientHandler.DeleteClient)
+		})
 	})
 
 	log.Println("grant-tool API listening on :8080")

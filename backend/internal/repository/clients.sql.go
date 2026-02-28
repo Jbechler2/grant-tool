@@ -13,18 +13,29 @@ import (
 )
 
 const createClient = `-- name: CreateClient :one
-INSERT INTO clients (name, grant_writer_id)
-VALUES ($1, $2)
+INSERT INTO clients (name, grant_writer_id, contact_name, contact_phone, contact_email, notes)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id, grant_writer_id, name, contact_name, contact_phone, contact_email, notes, created_at, updated_at, deleted_at
 `
 
 type CreateClientParams struct {
-	Name          string    `json:"name"`
-	GrantWriterID uuid.UUID `json:"grant_writer_id"`
+	Name          string         `json:"name"`
+	GrantWriterID uuid.UUID      `json:"grant_writer_id"`
+	ContactName   sql.NullString `json:"contact_name"`
+	ContactPhone  sql.NullString `json:"contact_phone"`
+	ContactEmail  sql.NullString `json:"contact_email"`
+	Notes         sql.NullString `json:"notes"`
 }
 
 func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Client, error) {
-	row := q.db.QueryRowContext(ctx, createClient, arg.Name, arg.GrantWriterID)
+	row := q.db.QueryRowContext(ctx, createClient,
+		arg.Name,
+		arg.GrantWriterID,
+		arg.ContactName,
+		arg.ContactPhone,
+		arg.ContactEmail,
+		arg.Notes,
+	)
 	var i Client
 	err := row.Scan(
 		&i.ID,
