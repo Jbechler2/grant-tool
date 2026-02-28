@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/jbechler2/grant-tool/backend/config"
+	"github.com/jbechler2/grant-tool/backend/internal/auth"
 	"github.com/jbechler2/grant-tool/backend/internal/db"
 	"github.com/jbechler2/grant-tool/backend/internal/handler"
 	"github.com/jbechler2/grant-tool/backend/internal/repository"
@@ -31,6 +32,11 @@ func main() {
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(auth.NewJWTMiddleware(cfg.JWTSecret))
+		r.Get("/testing", nil)
 	})
 
 	log.Println("grant-tool API listening on :8080")
