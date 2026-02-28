@@ -13,6 +13,91 @@ import (
 	"github.com/google/uuid"
 )
 
+type GrantDeadlineType string
+
+const (
+	GrantDeadlineTypeLOI         GrantDeadlineType = "LOI"
+	GrantDeadlineTypeApplication GrantDeadlineType = "application"
+	GrantDeadlineTypeOther       GrantDeadlineType = "other"
+)
+
+func (e *GrantDeadlineType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GrantDeadlineType(s)
+	case string:
+		*e = GrantDeadlineType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GrantDeadlineType: %T", src)
+	}
+	return nil
+}
+
+type NullGrantDeadlineType struct {
+	GrantDeadlineType GrantDeadlineType `json:"grant_deadline_type"`
+	Valid             bool              `json:"valid"` // Valid is true if GrantDeadlineType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGrantDeadlineType) Scan(value interface{}) error {
+	if value == nil {
+		ns.GrantDeadlineType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GrantDeadlineType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGrantDeadlineType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GrantDeadlineType), nil
+}
+
+type GrantVisibility string
+
+const (
+	GrantVisibilityPrivate GrantVisibility = "private"
+	GrantVisibilityPublic  GrantVisibility = "public"
+)
+
+func (e *GrantVisibility) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GrantVisibility(s)
+	case string:
+		*e = GrantVisibility(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GrantVisibility: %T", src)
+	}
+	return nil
+}
+
+type NullGrantVisibility struct {
+	GrantVisibility GrantVisibility `json:"grant_visibility"`
+	Valid           bool            `json:"valid"` // Valid is true if GrantVisibility is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGrantVisibility) Scan(value interface{}) error {
+	if value == nil {
+		ns.GrantVisibility, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GrantVisibility.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGrantVisibility) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GrantVisibility), nil
+}
+
 type UserRole string
 
 const (
@@ -67,6 +152,32 @@ type Client struct {
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     sql.NullTime   `json:"deleted_at"`
+}
+
+type Grant struct {
+	ID                        uuid.UUID       `json:"id"`
+	GrantWriterID             uuid.UUID       `json:"grant_writer_id"`
+	Title                     string          `json:"title"`
+	FunderName                string          `json:"funder_name"`
+	FunderWebsite             sql.NullString  `json:"funder_website"`
+	Description               sql.NullString  `json:"description"`
+	AwardAmountMin            sql.NullString  `json:"award_amount_min"`
+	AwardAmountMax            sql.NullString  `json:"award_amount_max"`
+	EligibilityNotes          sql.NullString  `json:"eligibility_notes"`
+	EstimatedApplicationHours sql.NullString  `json:"estimated_application_hours"`
+	Visibility                GrantVisibility `json:"visibility"`
+	CreatedAt                 time.Time       `json:"created_at"`
+	UpdatedAt                 time.Time       `json:"updated_at"`
+	DeletedAt                 sql.NullTime    `json:"deleted_at"`
+}
+
+type GrantDeadline struct {
+	ID          uuid.UUID         `json:"id"`
+	GrantID     uuid.UUID         `json:"grant_id"`
+	Label       GrantDeadlineType `json:"label"`
+	Date        time.Time         `json:"date"`
+	Description sql.NullString    `json:"description"`
+	CreatedAt   time.Time         `json:"created_at"`
 }
 
 type User struct {
