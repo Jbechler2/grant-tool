@@ -25,6 +25,8 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	clientService := service.NewClientService(queries)
 	clientHandler := handler.NewClientHandler(clientService)
+	grantService := service.NewGrantService(queries)
+	grantHandler := handler.NewGrantHandler(grantService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -44,6 +46,14 @@ func main() {
 			r.Get("/clients/{id}", clientHandler.GetClientByID)
 			r.Put("/clients/{id}", clientHandler.UpdateClient)
 			r.Delete("/clients/{id}", clientHandler.DeleteClient)
+			r.Post("/grants", grantHandler.CreateGrant)
+			r.Get("/grants", grantHandler.GetAllGrants)
+			r.Get("/grants/{id}", grantHandler.GetGrantByID)
+			r.Put("/grants/{id}", grantHandler.UpdateGrant)
+			r.Delete("/grants/{id}", grantHandler.DeleteGrant)
+			r.Get("/grants/{id}/deadlines", grantHandler.GetDeadlinesByGrantID)
+			r.Post("/grants/{id}/deadlines", grantHandler.AddDeadline)
+			r.Delete("/grants/{id}/deadlines/{deadlineID}", grantHandler.DeleteDeadline)
 		})
 	})
 

@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	ErrGrantNotFound     = errors.New("grant not found")
-	ErrGrantUnauthorized = errors.New("unauthorized access to grant")
+	ErrGrantNotFound        = errors.New("grant not found")
+	ErrGrantUnauthorized    = errors.New("unauthorized access to grant")
+	ErrInvalidDeadlineLabel = errors.New("invalid deadline label")
 )
 
 type GrantService struct {
@@ -214,6 +215,33 @@ func (s *GrantService) AddDeadline(ctx context.Context, input AddDeadlineInput) 
 	}
 
 	return toDeadlineResponse(record), nil
+}
+
+func (s *GrantService) GetDeadlinesByGrantID(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]Deadline, error) {
+	_, err := s.repo.GetGrantByID(ctx, repository.GetGrantByIDParams{
+		GrantWriterID: grantWriterID,
+		ID:            grantID,
+	})
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrGrantNotFound
+		}
+		return nil, err
+	}
+
+	deadlineRecords, err := s.repo.GetDeadlinesByGrantID(ctx, repository.GetDeadlinesByGrantIDParams{
+		GrantWriterID: grantWriterID,
+		GrantID:       grantID,
+	})
+
+	deadlines := make([]Deadline, len(deadlineRecords))
+
+	for i, deadline := range deadlineRecords {
+		deadlines[i] = *toDeadlineResponse(deadline)
+	}
+
+	return deadlines, nil
 }
 
 func (s *GrantService) DeleteDeadline(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, deadlineID uuid.UUID) error {
