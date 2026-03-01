@@ -143,17 +143,6 @@ func (s *ClientService) DeleteClient(ctx context.Context, grantWriterID uuid.UUI
 	return nil
 }
 
-func toNullStringFromPtr(s *string) sql.NullString {
-	if s == nil {
-		return sql.NullString{Valid: false}
-	}
-
-	return sql.NullString{
-		String: *s,
-		Valid:  *s != "",
-	}
-}
-
 func toClientResponse(c repository.Client) *Client {
 	return &Client{
 		ID:            c.ID,
@@ -172,16 +161,4 @@ func mergeNullString(input *string, existing sql.NullString) sql.NullString {
 	}
 
 	return toNullStringFromPtr(input)
-}
-
-func mergeString(input *string, existing string) string {
-	if input == nil {
-		return existing
-	}
-
-	if *input == "" {
-		return existing
-	}
-
-	return *input
 }
