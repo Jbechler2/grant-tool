@@ -55,7 +55,7 @@ func (s *ClientService) CreateClient(ctx context.Context, input CreateClientInpu
 	record, err := s.repo.CreateClient(ctx, repository.CreateClientParams{
 		Name:          *input.Name,
 		GrantWriterID: input.GrantWriterID,
-		ContactName:   toNullStringFromPtr(input.ContactEmail),
+		ContactName:   toNullStringFromPtr(input.ContactName),
 		ContactPhone:  toNullStringFromPtr(input.ContactPhone),
 		ContactEmail:  toNullStringFromPtr(input.ContactEmail),
 		Notes:         toNullStringFromPtr(input.Notes),

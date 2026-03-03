@@ -13,6 +13,52 @@ import (
 	"github.com/google/uuid"
 )
 
+type ApplicationStatus string
+
+const (
+	ApplicationStatusNotStarted ApplicationStatus = "not_started"
+	ApplicationStatusDraft      ApplicationStatus = "draft"
+	ApplicationStatusSubmitted  ApplicationStatus = "submitted"
+	ApplicationStatusApproved   ApplicationStatus = "approved"
+	ApplicationStatusDenied     ApplicationStatus = "denied"
+	ApplicationStatusWithdrawn  ApplicationStatus = "withdrawn"
+)
+
+func (e *ApplicationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ApplicationStatus(s)
+	case string:
+		*e = ApplicationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ApplicationStatus: %T", src)
+	}
+	return nil
+}
+
+type NullApplicationStatus struct {
+	ApplicationStatus ApplicationStatus `json:"application_status"`
+	Valid             bool              `json:"valid"` // Valid is true if ApplicationStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullApplicationStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ApplicationStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ApplicationStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullApplicationStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ApplicationStatus), nil
+}
+
 type GrantDeadlineType string
 
 const (
@@ -139,6 +185,21 @@ func (ns NullUserRole) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.UserRole), nil
+}
+
+type Application struct {
+	ID            uuid.UUID         `json:"id"`
+	GrantWriterID uuid.UUID         `json:"grant_writer_id"`
+	GrantID       uuid.UUID         `json:"grant_id"`
+	ClientID      uuid.UUID         `json:"client_id"`
+	Title         string            `json:"title"`
+	Status        ApplicationStatus `json:"status"`
+	IsExclusive   bool              `json:"is_exclusive"`
+	PublishedAt   sql.NullTime      `json:"published_at"`
+	Notes         sql.NullString    `json:"notes"`
+	CreatedAt     time.Time         `json:"created_at"`
+	UpdatedAt     time.Time         `json:"updated_at"`
+	DeletedAt     sql.NullTime      `json:"deleted_at"`
 }
 
 type Client struct {

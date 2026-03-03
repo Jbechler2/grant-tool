@@ -3,6 +3,7 @@ package service
 import (
 	"database/sql"
 	"strconv"
+	"time"
 
 	"github.com/jbechler2/grant-tool/backend/internal/repository"
 )
@@ -70,4 +71,12 @@ func mergeVisibility(input *string, existing repository.GrantVisibility) reposit
 		return existing
 	}
 	return repository.GrantVisibility(*input)
+}
+
+func nullDateToTime(t sql.NullTime) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+
+	return &t.Time
 }

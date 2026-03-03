@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jbechler2/grant-tool/backend/config"
 	"github.com/jbechler2/grant-tool/backend/internal/auth"
 	"github.com/jbechler2/grant-tool/backend/internal/db"
@@ -27,6 +27,8 @@ func main() {
 	clientHandler := handler.NewClientHandler(clientService)
 	grantService := service.NewGrantService(queries)
 	grantHandler := handler.NewGrantHandler(grantService)
+	applicationService := service.NewApplicationService(queries)
+	applicationHandler := handler.NewApplicationHandler(applicationService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -46,6 +48,8 @@ func main() {
 			r.Get("/clients/{id}", clientHandler.GetClientByID)
 			r.Put("/clients/{id}", clientHandler.UpdateClient)
 			r.Delete("/clients/{id}", clientHandler.DeleteClient)
+			r.Get("/clients/{id}/applications", applicationHandler.GetAllApplicationsByClientID)
+
 			r.Post("/grants", grantHandler.CreateGrant)
 			r.Get("/grants", grantHandler.GetAllGrants)
 			r.Get("/grants/{id}", grantHandler.GetGrantByID)
@@ -54,6 +58,13 @@ func main() {
 			r.Get("/grants/{id}/deadlines", grantHandler.GetDeadlinesByGrantID)
 			r.Post("/grants/{id}/deadlines", grantHandler.AddDeadline)
 			r.Delete("/grants/{id}/deadlines/{deadlineID}", grantHandler.DeleteDeadline)
+
+			r.Post("/applications", applicationHandler.CreateApplication)
+			r.Get("/applications", applicationHandler.GetAllApplicationsByUserID)
+			r.Get("/applications/{id}", applicationHandler.GetApplicationByID)
+			r.Put("/applications/{id}", applicationHandler.UpdateApplication)
+			r.Put("/applications/{id}/publish", applicationHandler.PublishApplication)
+			r.Delete("/applications/{id}", applicationHandler.DeleteApplication)
 		})
 	})
 

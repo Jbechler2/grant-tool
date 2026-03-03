@@ -11,19 +11,26 @@ import (
 )
 
 type Querier interface {
+	CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateDeadline(ctx context.Context, arg CreateDeadlineParams) (GrantDeadline, error)
 	CreateGrant(ctx context.Context, arg CreateGrantParams) (Grant, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteApplication(ctx context.Context, arg DeleteApplicationParams) error
 	DeleteClient(ctx context.Context, arg DeleteClientParams) error
 	DeleteDeadline(ctx context.Context, arg DeleteDeadlineParams) error
 	DeleteGrant(ctx context.Context, arg DeleteGrantParams) error
+	GetAllApplicationsByClientID(ctx context.Context, arg GetAllApplicationsByClientIDParams) ([]Application, error)
+	GetAllApplicationsByUserID(ctx context.Context, grantWriterID uuid.UUID) ([]Application, error)
 	GetAllClientsByGrantWriter(ctx context.Context, grantWriterID uuid.UUID) ([]Client, error)
 	GetAllGrants(ctx context.Context, grantWriterID uuid.UUID) ([]Grant, error)
+	GetApplicationByID(ctx context.Context, arg GetApplicationByIDParams) (Application, error)
 	GetClientByID(ctx context.Context, arg GetClientByIDParams) (Client, error)
 	GetDeadlinesByGrantID(ctx context.Context, arg GetDeadlinesByGrantIDParams) ([]GrantDeadline, error)
 	GetGrantByID(ctx context.Context, arg GetGrantByIDParams) (Grant, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	PublishApplication(ctx context.Context, arg PublishApplicationParams) (Application, error)
+	UpdateApplication(ctx context.Context, arg UpdateApplicationParams) (Application, error)
 	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
 	UpdateGrant(ctx context.Context, arg UpdateGrantParams) (Grant, error)
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error
