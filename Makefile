@@ -9,11 +9,13 @@ run:
 clean:
 	rm -rf backend/bin/
 
+DB_URL ?= postgres://granttool:localdevpassword@localhost:5432/granttool?sslmode=disable
+
 migrate-up:
-	goose -dir backend/migrations postgres "postgres://granttool:localdevpassword@localhost:5432/granttool?sslmode=disable" up
+	goose -dir backend/migrations postgres "$(DB_URL)" up
 
 migrate-down:
-	goose -dir backend/migrations postgres "postgres://granttool:localdevpassword@localhost:5432/granttool?sslmode=disable" down
+	goose -dir backend/migrations postgres "$(DB_URL)" down
 
 migrate-create:
 	goose -dir backend/migrations create $(name) sql

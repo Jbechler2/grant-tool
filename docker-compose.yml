@@ -4,6 +4,7 @@ services:
     container_name: grant-tool-db
     environment:
       POSTGRES_USER: granttool
+      #Local Dev only
       POSTGRES_PASSWORD: localdevpassword
       POSTGRES_DB: granttool
     ports:
