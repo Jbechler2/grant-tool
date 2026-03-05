@@ -17,6 +17,7 @@ type Config struct {
 	DBName           string
 	DBURL            string
 	JWTSecret        string
+	AllowedOrigin    string
 	JWTExpiryMinutes int
 }
 
@@ -37,6 +38,7 @@ func Load() *Config {
 		DBPassword:       getEnv("DB_PASSWORD", ""),
 		DBName:           getEnv("DB_NAME", "granttool"),
 		JWTSecret:        getEnv("JWT_SECRET", ""),
+		AllowedOrigin:    getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),
 		JWTExpiryMinutes: jwtExpiry,
 	}
 

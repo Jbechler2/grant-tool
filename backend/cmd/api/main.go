@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/jbechler2/grant-tool/backend/config"
 	"github.com/jbechler2/grant-tool/backend/internal/auth"
 	"github.com/jbechler2/grant-tool/backend/internal/db"
@@ -34,6 +35,14 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{cfg.AllowedOrigin},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)

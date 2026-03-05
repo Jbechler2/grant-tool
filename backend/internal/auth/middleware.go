@@ -26,18 +26,12 @@ func NewJWTMiddleware(secret string) func(http.Handler) http.Handler {
 
 func (m *JWTMiddleware) verify(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			writeUnauthorized(w)
-			return
-		}
+		tokenString := extractToken(r)
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		if tokenString == "" {
 			writeUnauthorized(w)
 			return
 		}
-		tokenString := parts[1]
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -89,4 +83,22 @@ func writeUnauthorized(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(`{"error": "unauthorized"}`))
+}
+
+func extractToken(r *http.Request) string {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			return parts[1]
+		}
+	}
+
+	cookie, err := r.Cookie("token")
+	if err == nil {
+		return cookie.Value
+	}
+
+	return ""
+
 }
