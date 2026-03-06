@@ -11,15 +11,20 @@ import (
 )
 
 type Querier interface {
+	CountValidTokens(ctx context.Context, grantWriterID uuid.UUID) (int64, error)
 	CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateDeadline(ctx context.Context, arg CreateDeadlineParams) (GrantDeadline, error)
 	CreateGrant(ctx context.Context, arg CreateGrantParams) (Grant, error)
+	CreateToken(ctx context.Context, arg CreateTokenParams) (RefreshToken, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteAllRefreshTokens(ctx context.Context, grantWriterID uuid.UUID) error
 	DeleteApplication(ctx context.Context, arg DeleteApplicationParams) error
 	DeleteClient(ctx context.Context, arg DeleteClientParams) error
 	DeleteDeadline(ctx context.Context, arg DeleteDeadlineParams) error
+	DeleteExpiredTokens(ctx context.Context) error
 	DeleteGrant(ctx context.Context, arg DeleteGrantParams) error
+	DeleteRefreshToken(ctx context.Context, arg DeleteRefreshTokenParams) error
 	GetAllApplicationsByClientID(ctx context.Context, arg GetAllApplicationsByClientIDParams) ([]Application, error)
 	GetAllApplicationsByUserID(ctx context.Context, grantWriterID uuid.UUID) ([]Application, error)
 	GetAllClientsByGrantWriter(ctx context.Context, grantWriterID uuid.UUID) ([]Client, error)

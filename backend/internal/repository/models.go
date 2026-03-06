@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type ApplicationStatus string
@@ -239,6 +240,16 @@ type GrantDeadline struct {
 	Date        time.Time         `json:"date"`
 	Description sql.NullString    `json:"description"`
 	CreatedAt   time.Time         `json:"created_at"`
+}
+
+type RefreshToken struct {
+	ID            uuid.UUID      `json:"id"`
+	GrantWriterID uuid.UUID      `json:"grant_writer_id"`
+	Token         string         `json:"token"`
+	UserAgent     sql.NullString `json:"user_agent"`
+	IpAddress     pqtype.Inet    `json:"ip_address"`
+	CreatedAt     time.Time      `json:"created_at"`
+	ExpiresAt     time.Time      `json:"expires_at"`
 }
 
 type User struct {
