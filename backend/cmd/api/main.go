@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -74,11 +76,22 @@ func main() {
 			r.Get("/applications", applicationHandler.GetAllApplicationsByUserID)
 			r.Get("/applications/{id}", applicationHandler.GetApplicationByID)
 			r.Put("/applications/{id}", applicationHandler.UpdateApplication)
-			r.Put("/applications/{id}/publish", applicationHandler.PublishApplication)
+			r.Post("/applications/{id}/publish", applicationHandler.PublishApplication)
 			r.Delete("/applications/{id}", applicationHandler.DeleteApplication)
 		})
 	})
 
 	log.Println("grant-tool API listening on :8080")
+
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := refreshTokenService.DeleteExpiredTokens(context.Background()); err != nil {
+				log.Printf("failed to cleanup expired tokens: %v", err)
+			}
+		}
+	}()
+
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
