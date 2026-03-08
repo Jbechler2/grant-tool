@@ -78,6 +78,8 @@ func main() {
 			r.Put("/applications/{id}", applicationHandler.UpdateApplication)
 			r.Post("/applications/{id}/publish", applicationHandler.PublishApplication)
 			r.Delete("/applications/{id}", applicationHandler.DeleteApplication)
+
+			r.Post("/auth/logout", authHandler.Logout)
 		})
 	})
 

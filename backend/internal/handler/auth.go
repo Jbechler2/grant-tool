@@ -3,9 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jbechler2/grant-tool/backend/internal/auth"
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
@@ -195,4 +198,49 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Email: result.User.Email,
 		Role:  string(result.User.Role),
 	})
+}
+
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	refreshToken, _ := r.Cookie("refresh_token")
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	if refreshToken != nil {
+		err = h.authService.Logout(r.Context(), grantWriterID, refreshToken.Value)
+		if err != nil {
+			log.Printf("logout cleanup failed: %v", err)
+		}
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Path:     "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Path:     "/",
+	})
+
+	w.WriteHeader(http.StatusOK)
 }
