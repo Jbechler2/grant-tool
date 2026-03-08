@@ -14,36 +14,44 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrEmailTaken         = errors.New("email already in use")
-	ErrUserNotFound       = errors.New("user not found")
+	ErrTooManySessions    = errors.New("max sessions exceeded")
 )
 
 type AuthService struct {
-	repo      repository.Querier
-	jwtSecret string
-	jwtExpiry time.Duration
+	repo                repository.Querier
+	jwtSecret           string
+	jwtExpiry           time.Duration
+	refreshTokenService *RefreshTokenService
 }
 
-func NewAuthService(repo repository.Querier, jwtSecret string, jwtExpiryMinutes int) *AuthService {
+func NewAuthService(repo repository.Querier, jwtSecret string, jwtExpiryMinutes int, refreshTokenService *RefreshTokenService) *AuthService {
 	return &AuthService{
-		repo:      repo,
-		jwtSecret: jwtSecret,
-		jwtExpiry: time.Duration(jwtExpiryMinutes) * time.Minute,
+		repo:                repo,
+		jwtSecret:           jwtSecret,
+		jwtExpiry:           time.Duration(jwtExpiryMinutes) * time.Minute,
+		refreshTokenService: refreshTokenService,
 	}
 }
 
 type RegisterInput struct {
-	Email    string
-	Password string
+	Email     string
+	Password  string
+	UserAgent string
+	IpAddress string
 }
 
 type LoginInput struct {
-	Email    string
-	Password string
+	Email     string
+	Password  string
+	UserAgent string
+	IpAddress string
 }
 
 type AuthResult struct {
-	Token string
-	User  repository.User
+	Token         string
+	RefreshToken  string
+	RefreshExpiry time.Time
+	User          repository.User
 }
 
 func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthResult, error) {
@@ -71,7 +79,16 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		return nil, err
 	}
 
-	return &AuthResult{Token: token, User: user}, nil
+	newRefreshToken, err := s.refreshTokenService.CreateToken(ctx, CreateTokenInput{
+		GrantWriterID: user.ID,
+		UserAgent:     input.UserAgent,
+		IpAddress:     input.IpAddress,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResult{Token: token, RefreshToken: newRefreshToken.Token, RefreshExpiry: newRefreshToken.ExpiresAt, User: user}, nil
 }
 
 func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult, error) {
@@ -88,12 +105,30 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 		_ = err
 	}
 
+	validTokens, err := s.refreshTokenService.CountValidTokens(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if validTokens >= 8 {
+		return nil, ErrTooManySessions
+	}
+
 	token, err := s.generateToken(user)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AuthResult{Token: token, User: user}, nil
+	newRefreshToken, err := s.refreshTokenService.CreateToken(ctx, CreateTokenInput{
+		GrantWriterID: user.ID,
+		UserAgent:     input.UserAgent,
+		IpAddress:     input.IpAddress,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResult{Token: token, RefreshToken: newRefreshToken.Token, RefreshExpiry: newRefreshToken.ExpiresAt, User: user}, nil
 }
 
 func (s *AuthService) generateToken(user repository.User) (string, error) {
@@ -108,4 +143,28 @@ func (s *AuthService) generateToken(user repository.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString([]byte(s.jwtSecret))
+}
+
+func (s *AuthService) RotateToken(ctx context.Context, tokenValue string, input RotateTokenInput) (*AuthResult, error) {
+	newToken, err := s.refreshTokenService.RotateToken(ctx, tokenValue, input)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.repo.GetUserByID(ctx, newToken.GrantWriterID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := s.generateToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResult{
+		Token:         accessToken,
+		RefreshToken:  newToken.Token,
+		RefreshExpiry: newToken.ExpiresAt,
+		User:          user,
+	}, nil
 }

@@ -45,6 +45,11 @@ type CreateTokenInput struct {
 	IpAddress     string
 }
 
+type RotateTokenInput struct {
+	UserAgent string
+	IpAddress string
+}
+
 func (s *RefreshTokenService) CreateToken(ctx context.Context, input CreateTokenInput) (*RefreshToken, error) {
 	newTokenValue, newTokenHash := generateRefreshToken()
 
@@ -65,7 +70,7 @@ func (s *RefreshTokenService) CreateToken(ctx context.Context, input CreateToken
 	return newTokenObject, nil
 }
 
-func (s *RefreshTokenService) RotateToken(ctx context.Context, tokenValue string, input CreateTokenInput) (*RefreshToken, error) {
+func (s *RefreshTokenService) RotateToken(ctx context.Context, tokenValue string, input RotateTokenInput) (*RefreshToken, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err

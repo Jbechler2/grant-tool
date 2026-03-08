@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
 type AuthHandler struct {
-	authService *service.AuthService
+	authService  *service.AuthService
+	isProduction bool
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, isProduction bool) *AuthHandler {
+	return &AuthHandler{authService: authService, isProduction: isProduction}
 }
 
 type registerRequest struct {
@@ -27,7 +29,6 @@ type loginRequest struct {
 }
 
 type authResponse struct {
-	Token string `json:"token"`
 	Email string `json:"email"`
 	Role  string `json:"role"`
 }
@@ -50,8 +51,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.authService.Register(r.Context(), service.RegisterInput{
-		Email:    req.Email,
-		Password: req.Password,
+		Email:     req.Email,
+		Password:  req.Password,
+		UserAgent: r.UserAgent(),
+		IpAddress: r.RemoteAddr,
 	})
 	if err != nil {
 		if errors.Is(err, service.ErrEmailTaken) {
@@ -62,8 +65,27 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    result.Token,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   15 * 60,
+		Path:     "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    result.RefreshToken,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
+		Path:     "/",
+	})
+
 	writeJSON(w, http.StatusCreated, authResponse{
-		Token: result.Token,
 		Email: result.User.Email,
 		Role:  string(result.User.Role),
 	})
@@ -83,8 +105,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.authService.Login(r.Context(), service.LoginInput{
-		Email:    req.Email,
-		Password: req.Password,
+		Email:     req.Email,
+		Password:  req.Password,
+		UserAgent: r.UserAgent(),
+		IpAddress: r.RemoteAddr,
 	})
 
 	if err != nil {
@@ -92,14 +116,83 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
+		if errors.Is(err, service.ErrTooManySessions) {
+			writeError(w, http.StatusForbidden, "max sessions exceeded")
+			return
+		}
 		writeError(w, http.StatusInternalServerError, "login failed")
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    result.Token,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   15 * 60,
+		Path:     "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    result.RefreshToken,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
+		Path:     "/",
+	})
+
 	writeJSON(w, http.StatusOK, authResponse{
-		Token: result.Token,
 		Email: result.User.Email,
 		Role:  string(result.User.Role),
 	})
 
+}
+
+func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := r.Cookie("refresh_token")
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "refresh failed")
+		return
+	}
+
+	result, err := h.authService.RotateToken(r.Context(), refreshToken.Value, service.RotateTokenInput{
+		UserAgent: r.UserAgent(),
+		IpAddress: r.RemoteAddr,
+	})
+	if err != nil {
+		if errors.Is(err, service.ErrRefreshTokenNotFound) || errors.Is(err, service.ErrRefreshTokenExpired) {
+			writeError(w, http.StatusUnauthorized, "refresh failed")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "refresh failed")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    result.Token,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   15 * 60,
+		Path:     "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    result.RefreshToken,
+		HttpOnly: true,
+		Secure:   h.isProduction,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
+		Path:     "/",
+	})
+
+	writeJSON(w, http.StatusOK, authResponse{
+		Email: result.User.Email,
+		Role:  string(result.User.Role),
+	})
 }

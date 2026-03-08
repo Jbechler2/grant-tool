@@ -22,8 +22,9 @@ func main() {
 	defer database.Close()
 
 	queries := repository.New(database)
-	authService := service.NewAuthService(queries, cfg.JWTSecret, cfg.JWTExpiryMinutes)
-	authHandler := handler.NewAuthHandler(authService)
+	refreshTokenService := service.NewRefreshTokenService(database, queries)
+	authService := service.NewAuthService(queries, cfg.JWTSecret, cfg.JWTExpiryMinutes, refreshTokenService)
+	authHandler := handler.NewAuthHandler(authService, cfg.IsProduction)
 	clientService := service.NewClientService(queries)
 	clientHandler := handler.NewClientHandler(clientService)
 	grantService := service.NewGrantService(queries)
@@ -47,6 +48,7 @@ func main() {
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
+		r.Post("/refresh", authHandler.Refresh)
 	})
 
 	r.Group(func(r chi.Router) {

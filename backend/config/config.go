@@ -19,6 +19,7 @@ type Config struct {
 	JWTSecret        string
 	AllowedOrigin    string
 	JWTExpiryMinutes int
+	IsProduction     bool
 }
 
 func Load() *Config {
@@ -40,10 +41,15 @@ func Load() *Config {
 		JWTSecret:        getEnv("JWT_SECRET", ""),
 		AllowedOrigin:    getEnv("ALLOWED_ORIGINS", "http://localhost:3000"),
 		JWTExpiryMinutes: jwtExpiry,
+		IsProduction:     getEnv("IS_PRODUCTION", "false") == "true",
 	}
 
 	if cfg.JWTSecret == "" {
 		log.Fatalf("JWT_SECRET must be set")
+	}
+
+	if cfg.DBPassword == "" {
+		log.Println("db password not provided")
 	}
 
 	cfg.DBURL = fmt.Sprintf(
