@@ -51,6 +51,7 @@ func main() {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
+		r.Post("/logout", authHandler.Logout)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -78,12 +79,8 @@ func main() {
 			r.Put("/applications/{id}", applicationHandler.UpdateApplication)
 			r.Post("/applications/{id}/publish", applicationHandler.PublishApplication)
 			r.Delete("/applications/{id}", applicationHandler.DeleteApplication)
-
-			r.Post("/auth/logout", authHandler.Logout)
 		})
 	})
-
-	log.Println("grant-tool API listening on :8080")
 
 	go func() {
 		ticker := time.NewTicker(time.Hour)
@@ -95,5 +92,6 @@ func main() {
 		}
 	}()
 
+	log.Println("grant-tool API listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

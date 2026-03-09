@@ -24,7 +24,7 @@ type Querier interface {
 	DeleteDeadline(ctx context.Context, arg DeleteDeadlineParams) error
 	DeleteExpiredTokens(ctx context.Context) error
 	DeleteGrant(ctx context.Context, arg DeleteGrantParams) error
-	DeleteRefreshToken(ctx context.Context, arg DeleteRefreshTokenParams) error
+	DeleteRefreshToken(ctx context.Context, token string) error
 	GetAllApplicationsByClientID(ctx context.Context, arg GetAllApplicationsByClientIDParams) ([]Application, error)
 	GetAllApplicationsByUserID(ctx context.Context, grantWriterID uuid.UUID) ([]Application, error)
 	GetAllClientsByGrantWriter(ctx context.Context, grantWriterID uuid.UUID) ([]Client, error)

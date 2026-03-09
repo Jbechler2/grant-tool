@@ -92,10 +92,7 @@ func (s *RefreshTokenService) RotateToken(ctx context.Context, tokenValue string
 		return nil, ErrRefreshTokenExpired
 	}
 
-	err = txRepo.DeleteRefreshToken(ctx, repository.DeleteRefreshTokenParams{
-		GrantWriterID: oldRecord.GrantWriterID,
-		Token:         tokenHash,
-	})
+	err = txRepo.DeleteRefreshToken(ctx, tokenHash)
 	if err != nil {
 		return nil, err
 	}
@@ -129,12 +126,9 @@ func (s *RefreshTokenService) CountValidTokens(ctx context.Context, grantWriterI
 	return tokenCount, nil
 }
 
-func (s *RefreshTokenService) DeleteRefreshToken(ctx context.Context, grantWriterID uuid.UUID, tokenValue string) error {
+func (s *RefreshTokenService) DeleteRefreshToken(ctx context.Context, tokenValue string) error {
 	tokenHash := hashToken(tokenValue)
-	err := s.repo.DeleteRefreshToken(ctx, repository.DeleteRefreshTokenParams{
-		GrantWriterID: grantWriterID,
-		Token:         tokenHash,
-	})
+	err := s.repo.DeleteRefreshToken(ctx, tokenHash)
 
 	return err
 }

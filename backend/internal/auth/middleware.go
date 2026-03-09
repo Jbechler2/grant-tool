@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -40,7 +41,12 @@ func (m *JWTMiddleware) verify(next http.Handler) http.Handler {
 			return []byte(m.secret), nil
 		})
 		if err != nil || !token.Valid {
-			writeUnauthorized(w)
+			var ve *jwt.ValidationError
+			if errors.As(err, &ve) && ve.Errors&jwt.ValidationErrorExpired != 0 {
+				writeTokenExpired(w)
+			} else {
+				writeUnauthorized(w)
+			}
 			return
 		}
 
@@ -101,4 +107,10 @@ func extractToken(r *http.Request) string {
 
 	return ""
 
+}
+
+func writeTokenExpired(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	w.Write([]byte(`{"error": "token_expired"}`))
 }

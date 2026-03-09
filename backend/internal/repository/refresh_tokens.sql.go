@@ -82,17 +82,11 @@ func (q *Queries) DeleteExpiredTokens(ctx context.Context) error {
 
 const deleteRefreshToken = `-- name: DeleteRefreshToken :exec
 DELETE FROM refresh_tokens
-WHERE grant_writer_id = $1
-AND token = $2
+WHERE token = $1
 `
 
-type DeleteRefreshTokenParams struct {
-	GrantWriterID uuid.UUID `json:"grant_writer_id"`
-	Token         string    `json:"token"`
-}
-
-func (q *Queries) DeleteRefreshToken(ctx context.Context, arg DeleteRefreshTokenParams) error {
-	_, err := q.db.ExecContext(ctx, deleteRefreshToken, arg.GrantWriterID, arg.Token)
+func (q *Queries) DeleteRefreshToken(ctx context.Context, token string) error {
+	_, err := q.db.ExecContext(ctx, deleteRefreshToken, token)
 	return err
 }
 

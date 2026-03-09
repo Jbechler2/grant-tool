@@ -16,8 +16,7 @@ AND expires_at > NOW();
 
 -- name: DeleteRefreshToken :exec
 DELETE FROM refresh_tokens
-WHERE grant_writer_id = $1
-AND token = $2;
+WHERE token = $1;
 
 -- name: DeleteAllRefreshTokens :exec
 DELETE FROM refresh_tokens

@@ -169,6 +169,6 @@ func (s *AuthService) RotateToken(ctx context.Context, tokenValue string, input 
 	}, nil
 }
 
-func (s *AuthService) Logout(ctx context.Context, grantWriterID uuid.UUID, tokenValue string) error {
-	return s.refreshTokenService.DeleteRefreshToken(ctx, grantWriterID, tokenValue)
+func (s *AuthService) Logout(ctx context.Context, tokenValue string) error {
+	return s.refreshTokenService.DeleteRefreshToken(ctx, tokenValue)
 }
