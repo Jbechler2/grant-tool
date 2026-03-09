@@ -179,10 +179,18 @@ func toInetFromString(ipAddressString string) pqtype.Inet {
 		return pqtype.Inet{Valid: false}
 	}
 
+	var mask net.IPMask
+
+	if ip.To4() != nil {
+		mask = ip.DefaultMask()
+	} else {
+		mask = net.CIDRMask(128, 128)
+	}
+
 	return pqtype.Inet{
 		IPNet: net.IPNet{
 			IP:   ip,
-			Mask: ip.DefaultMask(),
+			Mask: mask,
 		},
 		Valid: true,
 	}
