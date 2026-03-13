@@ -33,7 +33,7 @@ func main() {
 	grantHandler := handler.NewGrantHandler(grantService)
 	applicationService := service.NewApplicationService(queries)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
-	newIpRateLimiter := auth.NewIpRateLimiter(60, 5)
+	newIpRateLimiter := auth.NewIpRateLimiter(5.0/60, 5)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

@@ -3,6 +3,7 @@ package auth
 import (
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,9 +45,15 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 func RateLimitMiddleware(limiter *IPRateLimiter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				ip = r.RemoteAddr
+			ip := r.Header.Get("CF-Connecting-IP")
+			if ip == "" {
+				ip = r.Header.Get("X-Real-IP")
+			}
+			if ip == "" {
+				ip = strings.TrimSpace(strings.SplitN(r.Header.Get("X-Forwarded-For"), ",", 2)[0])
+			}
+			if ip == "" {
+				ip, _, _ = net.SplitHostPort(r.RemoteAddr)
 			}
 
 			if !limiter.GetLimiter(ip).Allow() {
