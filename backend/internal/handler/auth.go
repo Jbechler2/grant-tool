@@ -74,6 +74,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -84,6 +85,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	writeJSON(w, http.StatusCreated, authResponse{
@@ -133,6 +135,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -143,6 +146,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	writeJSON(w, http.StatusOK, authResponse{
@@ -180,6 +184,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -190,6 +195,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	writeJSON(w, http.StatusOK, authResponse{
@@ -226,6 +232,7 @@ func clearCookies(w http.ResponseWriter, isProduction bool) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -236,5 +243,6 @@ func clearCookies(w http.ResponseWriter, isProduction bool) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 		Path:     "/",
+		Domain:   ".upwellgrantmanager.com",
 	})
 }
