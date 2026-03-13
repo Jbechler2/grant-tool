@@ -33,6 +33,7 @@ func main() {
 	grantHandler := handler.NewGrantHandler(grantService)
 	applicationService := service.NewApplicationService(queries)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
+	newIpRateLimiter := auth.NewIpRateLimiter(60, 5)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -48,6 +49,8 @@ func main() {
 	}))
 
 	r.Route("/api/v1/auth", func(r chi.Router) {
+		r.Use(auth.RateLimitMiddleware(newIpRateLimiter))
+
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
@@ -89,6 +92,14 @@ func main() {
 			if err := refreshTokenService.DeleteExpiredTokens(context.Background()); err != nil {
 				log.Printf("failed to cleanup expired tokens: %v", err)
 			}
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			newIpRateLimiter.CleanupStale(15 * time.Minute)
 		}
 	}()
 

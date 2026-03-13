@@ -12,4 +12,7 @@ require (
 	golang.org/x/crypto v0.48.0
 )
 
-require github.com/go-chi/cors v1.2.2
+require (
+	github.com/go-chi/cors v1.2.2
+	golang.org/x/time v0.15.0
+)

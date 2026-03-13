@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Users, FileText, ClipboardList, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import apiClient from '@/lib/api'
 
 const navigation = [
   { name: 'Clients', href: '/clients', icon: Users},
@@ -18,7 +19,7 @@ export default function Sidebar() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await apiClient.post('/auth/logout')
     router.push('/login')
     router.refresh()
   }

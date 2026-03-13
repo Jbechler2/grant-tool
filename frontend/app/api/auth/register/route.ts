@@ -24,13 +24,10 @@ export async function POST(request: NextRequest) {
       role: data.role,
     })
 
-    nextResponse.cookies.set('token', data.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 15,
-      path: '/'
-    })
+    const cookieHeaders = response.headers.getSetCookie()
+    cookieHeaders.forEach(cookie => {
+      nextResponse.headers.append('set-cookie', cookie)
+    });
 
     return nextResponse
   } catch {
