@@ -35,8 +35,8 @@ export default function Sidebar() {
         {navigation.map((item) => {
           const isActive = pathname.startsWith(item.href)
           return (
+            <div className='flex flex-row justify-between' key={item.name}>
             <Link
-              key={item.name}
               href={item.href}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -46,6 +46,10 @@ export default function Sidebar() {
               <item.icon className='h-5 w-5' />
               {item.name}
             </Link>
+            <Link href={item.href + '/new'} className='bg-gray-200 border-1 border-gray-400 px-2 py-1 rounded-md'>
+              <div className='text-lg'>+</div>
+            </Link>
+            </div>
           )
         })}
       </nav>
