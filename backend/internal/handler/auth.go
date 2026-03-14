@@ -66,6 +66,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookieDomain := ""
+	if h.isProduction {
+		cookieDomain = ".upwellgrantmanager.com"
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    result.Token,
@@ -74,7 +79,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -85,7 +90,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	writeJSON(w, http.StatusCreated, authResponse{
@@ -126,6 +131,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "login failed")
 		return
 	}
+	cookieDomain := ""
+	if h.isProduction {
+		cookieDomain = ".upwellgrantmanager.com"
+	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
@@ -135,7 +144,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -146,7 +155,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	writeJSON(w, http.StatusOK, authResponse{
@@ -176,6 +185,11 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookieDomain := ""
+	if h.isProduction {
+		cookieDomain = ".upwellgrantmanager.com"
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    result.Token,
@@ -184,7 +198,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   15 * 60,
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -195,7 +209,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(time.Until(result.RefreshExpiry).Seconds()),
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	writeJSON(w, http.StatusOK, authResponse{
@@ -207,7 +221,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := r.Cookie("refresh_token")
 	if err != nil || refreshToken.Value == "" {
-		clearCookies(w, h.isProduction)
+		h.clearCookies(w, h.isProduction)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -219,11 +233,15 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	clearCookies(w, h.isProduction)
+	h.clearCookies(w, h.isProduction)
 	w.WriteHeader(http.StatusOK)
 }
 
-func clearCookies(w http.ResponseWriter, isProduction bool) {
+func (h *AuthHandler) clearCookies(w http.ResponseWriter, isProduction bool) {
+	cookieDomain := ""
+	if h.isProduction {
+		cookieDomain = ".upwellgrantmanager.com"
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    "",
@@ -232,7 +250,7 @@ func clearCookies(w http.ResponseWriter, isProduction bool) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -243,6 +261,6 @@ func clearCookies(w http.ResponseWriter, isProduction bool) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 		Path:     "/",
-		Domain:   ".upwellgrantmanager.com",
+		Domain:   cookieDomain,
 	})
 }
