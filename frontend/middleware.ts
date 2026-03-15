@@ -1,14 +1,16 @@
+import { refresh } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 const publicRoutes = ['/login', '/register']
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
+  const refreshToken = request.cookies.get('refresh_token')
   const pathname = request.nextUrl.pathname
-
+  console.log("Token value: ", token)
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  if(!token && !isPublicRoute) {
+  if(!token && !refreshToken && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
