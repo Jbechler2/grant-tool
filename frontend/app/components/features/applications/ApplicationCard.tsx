@@ -10,17 +10,17 @@ export default function ApplicationCard(app: Application) {
     href=""
     className="flex"
   >
-    <div className="bg-white rounded-lg shadow-xl pr-6 pb-6 flex flex-col justify-between lg:h-80 md:h-64 sm:h-50 font-halant">
+    <div className="bg-white rounded-lg shadow-xl pr-6 pb-6 flex flex-col justify-between lg:h-40 md:h-32 sm:h-20 font-halant">
       <div className="flex flex-row justify-between pt-4 pl-4">
         <div className="grid place-items-center bg-seafoam mx-auto my-auto p-2 rounded-md border-2 border-forest h-10 w-10">
-          BA
+          {getIconLetters(app.title)}
         </div>
         <div className="px-3">
           <div>
-            <h1 className="lg:text-lg font-bold  pb-0 mb-0">Basic Needs and Income Cr...</h1>
+            <h1 className="lg:text-lg font-bold  pb-0 mb-0">{app.title}</h1>
           </div>
           <div className="grid place-items-start p-0 m-0">
-            <h3 className="pt-0 mt-0 italic">Funder name</h3>
+            <h3 className="pt-0 mt-0 italic">{app.funder_name}</h3>
           </div>
         </div>
         <div>
@@ -30,8 +30,7 @@ export default function ApplicationCard(app: Application) {
       <hr></hr>
       <div className="flex flex-col justify-between flex-1 pl-4 pt-2">
         <div>
-          <p className="whitespace-normal break-words">Supports nonprofit organizations delivering arts programming to underserved communities. 
-            Projects must demonstrate measurable community impact and sustainability beyond the grant period.</p>
+          <p className="whitespace-normal break-words"></p>
         </div>
         <div>Topics</div>
       </div>
@@ -54,4 +53,30 @@ export default function ApplicationCard(app: Application) {
   </Link>
 )
 
+}
+
+function getIconLetters(name: string): string{
+  const words = name.split(' ')
+  if(words.length > 0){
+    if(words.length == 1){
+    return words[0][0].toUpperCase()
+  } if(words.length == 2){
+    return words[0][0].toUpperCase() + words[1][0].toUpperCase();
+  } else {
+    const letter1 = words[0][0].toUpperCase()
+    let letter2 = ''
+    words.sort((a, b) => {
+      return b.length - a.length
+    })
+    if(words[0][0].toUpperCase() === letter1){
+      letter2 = words[1][0].toUpperCase()
+    } else {
+      letter2 = words[0][0].toUpperCase()
+    }
+    return letter1 + letter2
+  }
+  } else {
+    return 'AA'
+  }
+  
 }
