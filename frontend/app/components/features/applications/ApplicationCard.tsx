@@ -20,7 +20,7 @@ export default function ApplicationCard(app: Application) {
             <h1 className="lg:text-lg font-bold  pb-0 mb-0">{app.title}</h1>
           </div>
           <div className="grid place-items-start p-0 m-0">
-            <h3 className="pt-0 mt-0 italic">{app.funder_name}</h3>
+            <h3 className="pt-0 mt-0 italic">{app.status}</h3>
           </div>
         </div>
         <div>
