@@ -7,7 +7,6 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const refreshToken = request.cookies.get('refresh_token')
   const pathname = request.nextUrl.pathname
-  console.log("Token value: ", token)
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
   if(!token && !refreshToken && !isPublicRoute) {
