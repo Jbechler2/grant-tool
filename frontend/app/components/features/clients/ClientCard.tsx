@@ -7,12 +7,18 @@ export default function ClientCard(client: Client) {
   <Link 
     key={client.id}
     href=""
+    className="h-80 w-20"
   >
-    <Card            
-      className="max-w-sm hover:shadow-md"
-    >
-      <CardTitle>{client.name}</CardTitle>
-    </Card>
+   <div className="bg-white rounded-lg shadow-xl h-20 p-5">
+    <div className="">
+      <div>
+        Icon
+      </div>
+      <div>
+       {client.name}
+      </div>
+    </div>
+   </div>
   </Link>
 )
 
