@@ -1,5 +1,6 @@
 import { Grant } from "@/types";
 import { useRouter } from "next/navigation";
+import GrantRow from "./GrantRow";
 
 interface GrantListViewProps {
   ViewMode: string,
@@ -36,7 +37,9 @@ export default function GrantListView(props: GrantListViewProps) {
   if(props.ViewMode === "list"){
     return (
       <div>
-        List View
+        {props.Grants.map(grant => (
+          <GrantRow key={grant.id} grant={grant} />
+        ))}
       </div>
     )
   } else {

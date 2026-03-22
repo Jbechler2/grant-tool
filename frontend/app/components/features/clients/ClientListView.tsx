@@ -1,5 +1,6 @@
 import { Client } from "@/types";
 import { useRouter } from "next/navigation";
+import ClientRow from "./ClientRow";
 
 interface ClientListViewProps{
   ViewMode: string,
@@ -48,8 +49,10 @@ function ClientCard({ client }: { client: Client }) {
 export default function ClientListView(props: ClientListViewProps) {
   if(props.ViewMode === 'list'){
     return (
-      <div>
-        List View
+      <div className="flex flex-col">
+        {props.Clients.map(client => (
+          <ClientRow key={client.id} client={client} />
+        ))}
       </div>
     )
   } else {

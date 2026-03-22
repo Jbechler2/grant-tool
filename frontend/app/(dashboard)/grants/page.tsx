@@ -7,10 +7,13 @@ import GrantFilter from '@/app/components/features/grants/GrantFilter'
 import { useEffect, useMemo, useState } from 'react'
 import GrantListView from '@/app/components/features/grants/GrantListView'
 import Fuse from 'fuse.js'
+import { Button } from '@/components/ui/button'
+import { List, Square } from 'lucide-react'
 
 export default function GrantsPage() {
   const { data: grants = [], isLoading } = useGrants()
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState("card")
 
   const fuse = useMemo(() => new Fuse(grants, {
     keys: ["title", "funder_name"],
@@ -43,13 +46,32 @@ export default function GrantsPage() {
 
   return (
     <div className='flex flex-col'>
-      <div className='w-1/2 mb-10'>
-        <GrantFilter onSearchChange={setSearchQuery}></GrantFilter>
-      </div>
-      <div>
-        <GrantListView ViewMode='card' Grants={filteredGrants}></GrantListView>
-      </div>
-    </div>
-    
+          <div className='lg:w-1/2 sm:w-4/5 mb-10 flex flex-row justify-between'>
+            <div className='lg:w-3/5 sm:w-1/5'>
+              <GrantFilter onSearchChange={setSearchQuery}></GrantFilter>
+            </div>
+            <div className='flex flex-col m-3 lg:w-1/5 sm:w-full bg-blue-200 justify-between rounded-lg p-3'>
+              <div className='flex justify-center'>
+                <h1>View Mode</h1>
+              </div>
+              <div className='flex justify-center'>
+                <Button
+                  className='bg-gray-400 mr-5'
+                  onClick={() => setViewMode('list')}
+                >
+                  <List />
+                </Button>
+                <Button
+                  className='bg-gray-400'
+                  onClick={() => setViewMode('card')}
+                ><Square />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <GrantListView ViewMode={viewMode} Grants={filteredGrants}></GrantListView>
+          </div>
+        </div>
   )
 }
