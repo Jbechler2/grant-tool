@@ -46,23 +46,23 @@ export default function GrantsPage() {
 
   return (
     <div className='flex flex-col'>
-          <div className='lg:w-1/2 sm:w-4/5 mb-10 flex flex-row justify-between'>
+          <div className='lg:w-1/2 sm:w-4/5 flex mb-1 flex-row justify-between'>
             <div className='lg:w-3/5 sm:w-1/5'>
               <GrantFilter onSearchChange={setSearchQuery}></GrantFilter>
             </div>
-            <div className='flex flex-col m-3 lg:w-1/5 sm:w-full bg-blue-200 justify-between rounded-lg p-3'>
-              <div className='flex justify-center'>
-                <h1>View Mode</h1>
-              </div>
-              <div className='flex justify-center'>
+            <div className='flex flex-col lg:w-1/5 sm:w-full justify-between rounded-lg self-end'>
+              <div className='flex justify-between'>
                 <Button
-                  className='bg-gray-400 mr-5'
+                  variant='ghost'
+                  className='bg-white-400'
                   onClick={() => setViewMode('list')}
                 >
                   <List />
                 </Button>
+                <div className='my-auto mx-2'>|</div>
                 <Button
-                  className='bg-gray-400'
+                  variant='ghost'
+                  className='bg-white-400'
                   onClick={() => setViewMode('card')}
                 ><Square />
                 </Button>

@@ -37,6 +37,12 @@ export default function GrantListView(props: GrantListViewProps) {
   if(props.ViewMode === "list"){
     return (
       <div>
+      <div className='grid grid-cols-4 px-4 py-2 text-sm font-medium text-muted-foreground border-b'>
+        <span>Title</span>
+        <span>Funder</span>
+        <span>Min Amount</span>
+        <span>Max Amount</span>
+      </div>
         {props.Grants.map(grant => (
           <GrantRow key={grant.id} grant={grant} />
         ))}
