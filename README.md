@@ -5,7 +5,7 @@ A grant management application for freelance grant writers.
 ## Tech Stack
 - **Backend**: Go, Chi, sqlc, PostgreSQL
 - **Frontend**: Next.js, TypeScript, Tailwind, shadcn/ui
-- **Infrastructure**: AWS (planned)
+- **Infrastructure**: AWS
 
 ## Development Setup
 
@@ -29,4 +29,4 @@ npm run dev
 ```
 
 ## Status
-Active development. Backend API complete for core entities (auth, clients, grants, applications). Frontend in progress.
+Active development. Backend API complete for core entities (auth, clients, grants, applications) and deployed to AWS. Frontend basic views complete and deployed to Vercel.
