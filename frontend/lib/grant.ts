@@ -14,3 +14,8 @@ export async function getGrant(id: string): Promise<Grant> {
   if (!res.ok) throw new Error('Failed to fetch grant');
   return res.json();
 }
+
+export async function getGrantTopics(id: string): Promise<Topic[]> {
+const token = (await cookies()).get('token')?.value;
+const url = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/grants/${id}`
+}
