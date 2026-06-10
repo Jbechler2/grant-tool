@@ -89,7 +89,7 @@ func TestCreateClient_ReturnOK(t *testing.T) {
 	handler.CreateClient(rr, req)
 
 	if rr.Code != http.StatusCreated {
-		t.Errorf("expected 200, got %d", rr.Code)
+		t.Errorf("expected 201, got %d", rr.Code)
 	}
 }
 
