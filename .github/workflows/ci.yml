@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
-    build:
+    build-and-test:
       defaults:
         run:
           working-directory: ./backend
