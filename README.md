@@ -1,4 +1,4 @@
-[![CI](https://github.com/Jbechler2/grant-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/Jbechler2/grant-tool/actions/workflows/ci.yml)
+[![CI](https://github.com/Jbechler2/grant-tool/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/Jbechler2/grant-tool/actions/workflows/ci-backend.yml)
 # Grant Tool
 
 A grant management application for freelance grant writers.
