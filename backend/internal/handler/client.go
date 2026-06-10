@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,11 +12,19 @@ import (
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
-type ClientHandler struct {
-	clientService *service.ClientService
+type ClientServicer interface {
+	CreateClient(ctx context.Context, input service.CreateClientInput) (*service.Client, error)
+	GetClientByID(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) (*service.Client, error)
+	GetAllClients(ctx context.Context, grantWriterID uuid.UUID) ([]service.Client, error)
+	UpdateClient(ctx context.Context, input service.UpdateClientInput) (*service.Client, error)
+	DeleteClient(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) error
 }
 
-func NewClientHandler(clientService *service.ClientService) *ClientHandler {
+type ClientHandler struct {
+	clientService ClientServicer
+}
+
+func NewClientHandler(clientService ClientServicer) *ClientHandler {
 	return &ClientHandler{clientService: clientService}
 }
 
@@ -149,7 +158,7 @@ func (h *ClientHandler) UpdateClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name != nil && *req.Name == "" {
+	if req.Name == nil || *req.Name == "" {
 		writeError(w, http.StatusBadRequest, "client name cannot be empty")
 		return
 	}

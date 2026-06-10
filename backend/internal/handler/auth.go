@@ -10,6 +10,9 @@ import (
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
+type AuthServicer interface {
+}
+
 type AuthHandler struct {
 	authService  *service.AuthService
 	isProduction bool

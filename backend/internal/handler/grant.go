@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,11 +13,22 @@ import (
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
-type GrantHandler struct {
-	grantService *service.GrantService
+type GrantServicer interface {
+	CreateGrant(ctx context.Context, input service.CreateGrantInput) (*service.Grant, error)
+	GetGrantByID(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) (*service.Grant, error)
+	GetAllGrants(ctx context.Context, grantWriterID uuid.UUID) ([]service.Grant, error)
+	UpdateGrant(ctx context.Context, input service.UpdateGrantInput) (*service.Grant, error)
+	DeleteGrant(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) error
+	AddDeadline(ctx context.Context, input service.AddDeadlineInput) (*service.Deadline, error)
+	GetDeadlinesByGrantID(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Deadline, error)
+	DeleteDeadline(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, deadlineID uuid.UUID) error
 }
 
-func NewGrantHandler(grantService *service.GrantService) *GrantHandler {
+type GrantHandler struct {
+	grantService GrantServicer
+}
+
+func NewGrantHandler(grantService GrantServicer) *GrantHandler {
 	return &GrantHandler{grantService: grantService}
 }
 

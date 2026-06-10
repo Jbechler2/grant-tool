@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,11 +13,21 @@ import (
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
-type ApplicationHandler struct {
-	applicationService *service.ApplicationService
+type ApplicationServicer interface {
+	CreateApplication(ctx context.Context, input service.CreateApplicationInput) (*service.Application, error)
+	GetAllApplicationsByUserID(ctx context.Context, grantWriterID uuid.UUID) ([]service.Application, error)
+	GetAllApplicationsByClientID(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) ([]service.Application, error)
+	GetApplicationByID(ctx context.Context, grantWriterID uuid.UUID, applicationID uuid.UUID) (*service.Application, error)
+	UpdateApplication(ctx context.Context, input service.UpdateApplicationInput) (*service.Application, error)
+	PublishApplication(ctx context.Context, grantWriterID uuid.UUID, applicationID uuid.UUID) (*service.Application, error)
+	DeleteApplication(ctx context.Context, grantWriterID uuid.UUID, applicationID uuid.UUID) error
 }
 
-func NewApplicationHandler(applicationService *service.ApplicationService) *ApplicationHandler {
+type ApplicationHandler struct {
+	applicationService ApplicationServicer
+}
+
+func NewApplicationHandler(applicationService ApplicationServicer) *ApplicationHandler {
 	return &ApplicationHandler{applicationService: applicationService}
 }
 
