@@ -2,7 +2,7 @@ name: Continuous Integration
 on:
   pull_request:
     branches: [ main ]
-  jobs:
+jobs:
     build:
       defaults:
         run:
