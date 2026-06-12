@@ -49,6 +49,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !strings.Contains(req.Email, "@") {
+		writeError(w, http.StatusBadRequest, "invalid email")
+		return
+	}
+
 	if len(req.Password) < 8 {
 		writeError(w, http.StatusBadRequest, "password must be at least 8 characters")
 		return
