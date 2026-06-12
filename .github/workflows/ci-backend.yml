@@ -10,6 +10,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
     build-and-test:
@@ -38,7 +39,7 @@ jobs:
       needs: build-and-test
       runs-on: ubuntu-latest
       if: >-
-        github.event_name == 'push' && 
+        (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && 
         github.ref == 'refs/heads/main'
 
       permissions:
@@ -74,7 +75,7 @@ jobs:
       needs: deploy
       runs-on: ubuntu-latest
       if: >-
-        github.event_name == 'push' && 
+        (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && 
         github.ref == 'refs/heads/main'
 
       steps:
