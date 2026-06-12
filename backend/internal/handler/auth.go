@@ -1,24 +1,30 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jbechler2/grant-tool/backend/internal/service"
 )
 
 type AuthServicer interface {
+	Register(ctx context.Context, input service.RegisterInput) (*service.AuthResult, error)
+	Login(ctx context.Context, input service.LoginInput) (*service.AuthResult, error)
+	RotateToken(ctx context.Context, tokenValue string, input service.RotateTokenInput) (*service.AuthResult, error)
+	Logout(ctx context.Context, tokenValue string) error
 }
 
 type AuthHandler struct {
-	authService  *service.AuthService
+	authService  AuthServicer
 	isProduction bool
 }
 
-func NewAuthHandler(authService *service.AuthService, isProduction bool) *AuthHandler {
+func NewAuthHandler(authService AuthServicer, isProduction bool) *AuthHandler {
 	return &AuthHandler{authService: authService, isProduction: isProduction}
 }
 
@@ -46,6 +52,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if req.Email == "" || req.Password == "" {
 		writeError(w, http.StatusBadRequest, "email and password are required")
+		return
+	}
+
+	if !strings.Contains(req.Email, "@") {
+		writeError(w, http.StatusBadRequest, "invalid email")
 		return
 	}
 

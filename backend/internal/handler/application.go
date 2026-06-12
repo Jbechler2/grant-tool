@@ -139,7 +139,8 @@ func (h *ApplicationHandler) GetAllApplicationsByUserID(w http.ResponseWriter, r
 			writeError(w, http.StatusNotFound, "application not found")
 			return
 		}
-		writeError(w, http.StatusNotFound, "failed to retrieve applications")
+		writeError(w, http.StatusInternalServerError, "failed to retrieve applications")
+		return
 	}
 
 	applications := make([]applicationResponse, len(results))
@@ -181,7 +182,8 @@ func (h *ApplicationHandler) GetAllApplicationsByClientID(w http.ResponseWriter,
 			writeError(w, http.StatusNotFound, "application not found")
 			return
 		}
-		writeError(w, http.StatusNotFound, "failed to retrieve applications")
+		writeError(w, http.StatusInternalServerError, "failed to retrieve applications")
+		return
 	}
 
 	applications := make([]applicationResponse, len(results))
@@ -223,7 +225,8 @@ func (h *ApplicationHandler) GetApplicationByID(w http.ResponseWriter, r *http.R
 			writeError(w, http.StatusNotFound, "application not found")
 			return
 		}
-		writeError(w, http.StatusNotFound, "failed to retrieve applications")
+		writeError(w, http.StatusInternalServerError, "failed to retrieve applications")
+		return
 	}
 
 	writeJSON(w, http.StatusOK, toApplicationResponse(result))

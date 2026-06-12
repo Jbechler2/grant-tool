@@ -158,7 +158,7 @@ func (h *ClientHandler) UpdateClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name == nil || *req.Name == "" {
+	if req.Name != nil && *req.Name == "" {
 		writeError(w, http.StatusBadRequest, "client name cannot be empty")
 		return
 	}
