@@ -119,7 +119,7 @@ func TestCreateClient(t *testing.T) {
 	}
 }
 
-func TestGetAllClients(t *testing.T) {
+func TestGetAllClientsByID(t *testing.T) {
 	tests := []struct {
 		name           string
 		userId         string
@@ -274,7 +274,7 @@ func TestUpdateClient(t *testing.T) {
 			name:           "invalid client name - 400",
 			userId:         validUserId,
 			clientId:       validClientId,
-			body:           `{"email": "test@test.com"}`,
+			body:           `{"name": ""}`,
 			err:            nil,
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -284,7 +284,7 @@ func TestUpdateClient(t *testing.T) {
 			clientId:       validClientId,
 			body:           `{"email": "test@test.com"}`,
 			err:            service.ErrClientNotFound,
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "service error - 500",
