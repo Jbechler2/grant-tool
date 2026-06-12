@@ -33,6 +33,7 @@ func main() {
 	grantHandler := handler.NewGrantHandler(grantService)
 	applicationService := service.NewApplicationService(queries)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
+	healthHandler := handler.NewHealthHandler(database)
 	newIpRateLimiter := auth.NewIpRateLimiter(5.0/60, 5)
 
 	r := chi.NewRouter()
@@ -83,6 +84,11 @@ func main() {
 			r.Post("/applications/{id}/publish", applicationHandler.PublishApplication)
 			r.Delete("/applications/{id}", applicationHandler.DeleteApplication)
 		})
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RateLimitMiddleware(newIpRateLimiter))
+		r.Get("/health", healthHandler.Health)
 	})
 
 	go func() {
