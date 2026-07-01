@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -109,6 +110,12 @@ func main() {
 		}
 	}()
 
-	log.Println("grant-tool API listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("grant-tool API listening on :", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
