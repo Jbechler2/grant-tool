@@ -22,6 +22,8 @@ type GrantServicer interface {
 	AddDeadline(ctx context.Context, input service.AddDeadlineInput) (*service.Deadline, error)
 	GetDeadlinesByGrantID(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Deadline, error)
 	DeleteDeadline(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, deadlineID uuid.UUID) error
+	AddTopic(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error
+	GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Topic, error)
 }
 
 type GrantHandler struct {
