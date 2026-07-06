@@ -31,6 +31,8 @@ func main() {
 	clientService := service.NewClientService(queries)
 	clientHandler := handler.NewClientHandler(clientService)
 	grantService := service.NewGrantService(queries)
+	topicService := service.NewTopicService(queries)
+	topicHandler := handler.NewTopicHandler(topicService)
 	grantHandler := handler.NewGrantHandler(grantService)
 	applicationService := service.NewApplicationService(queries)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
@@ -77,6 +79,10 @@ func main() {
 			r.Get("/grants/{id}/deadlines", grantHandler.GetDeadlinesByGrantID)
 			r.Post("/grants/{id}/deadlines", grantHandler.AddDeadline)
 			r.Delete("/grants/{id}/deadlines/{deadlineID}", grantHandler.DeleteDeadline)
+			r.Get("/grants/{id}/topics", grantHandler.GetAllTopicsByGrant)
+			r.Post("/grants/{id}/topics", grantHandler.AddTopicToGrant)
+
+			r.Post("/topics", topicHandler.CreateTopic)
 
 			r.Post("/applications", applicationHandler.CreateApplication)
 			r.Get("/applications", applicationHandler.GetAllApplicationsByUserID)

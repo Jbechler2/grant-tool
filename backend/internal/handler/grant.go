@@ -61,6 +61,11 @@ type addDeadlineRequest struct {
 	Description *string `json:"description"`
 }
 
+type addTopicRequest struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
 type grantResponse struct {
 	ID                        string    `json:"id"`
 	GrantWriterID             string    `json:"grant_writer_id"`
@@ -84,6 +89,12 @@ type deadlineResponse struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type topicResponse struct {
+	ID            string `json:"id"`
+	GrantWriterID string `json:"grant_writer_id"`
+	Label         string `json:"label"`
 }
 
 func (h *GrantHandler) CreateGrant(w http.ResponseWriter, r *http.Request) {
@@ -463,6 +474,97 @@ func (h *GrantHandler) DeleteDeadline(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *GrantHandler) GetAllTopicsByGrant(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantIDString := chi.URLParam(r, "id")
+	if grantIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	grantID, err := uuid.Parse(grantIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	results, err := h.grantService.GetAllTopics(r.Context(), grantWriterID, grantID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to retrieve topics")
+		return
+	}
+
+	topics := make([]topicResponse, len(results))
+	for i, t := range results {
+		topics[i] = *toTopicResponse(&t)
+	}
+
+	writeJSON(w, http.StatusOK, topics)
+}
+
+func (h *GrantHandler) AddTopicToGrant(w http.ResponseWriter, r *http.Request) {
+	var req addTopicRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	grantIDString := chi.URLParam(r, "id")
+	if grantIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	grantID, err := uuid.Parse(grantIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	topicID, err := uuid.Parse(req.ID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid topic id")
+		return
+	}
+
+	if req.Label == "" {
+		writeError(w, http.StatusBadRequest, "label is required")
+		return
+	}
+
+	err = h.grantService.AddTopic(r.Context(), grantWriterID, grantID, topicID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to add topic to client")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, nil)
+}
+
 func toGrantResponse(g *service.Grant) *grantResponse {
 	return &grantResponse{
 		ID:                        g.ID.String(),
@@ -478,6 +580,14 @@ func toGrantResponse(g *service.Grant) *grantResponse {
 		Visibility:                g.Visibility,
 		CreatedAt:                 g.CreatedAt,
 		UpdatedAt:                 g.UpdatedAt,
+	}
+}
+
+func toTopicResponse(t *service.Topic) *topicResponse {
+	return &topicResponse{
+		ID:            t.ID.String(),
+		GrantWriterID: t.GrantWriterID.String(),
+		Label:         t.Label,
 	}
 }
 

@@ -1,4 +1,4 @@
-import { getGrant } from "@/lib/grant";
+import { getGrant, getGrantTopics } from "@/lib/grant";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -7,7 +7,8 @@ type Props = {
 export default async function GrantDetails({ params }: Props){
   const { id } = await params;
   const grant = await getGrant(id);
-  console.log(grant)
+  const topics = await getGrantTopics(id)
+  console.log("test: ", topics)
 
   // PLACEHOLDER
   const potentialClients = [
@@ -25,7 +26,7 @@ export default async function GrantDetails({ params }: Props){
     }
   ]
   
-  const topics = [
+  const topics_hard = [
     {
       "id": 1,
       "text": "Community Improvement"
@@ -52,7 +53,7 @@ export default async function GrantDetails({ params }: Props){
           <h1 className="text-xl font-bold">{grant.title}</h1>
           <h3 className="text-sm italic mb-4">{grant.funder_name}</h3>
           <div className="flex flex-row gap-2">
-            {topics.map(topic => (
+            {topics_hard.map(topic => (
               <h5 key={topic.id} className="bg-green-200 w-fit px-2 py-1 rounded-md text-gray-500">{topic.text}</h5>  
             ))}
           </div>

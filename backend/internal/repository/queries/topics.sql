@@ -22,10 +22,12 @@ JOIN topics t ON t.id=ct.topic_id
 WHERE t.grant_writer_id = $1
 AND ct.client_id = $2;
 
--- name: AddTopicToGrant :one
+-- name: AddTopicToGrant :execrows
 INSERT INTO grants_topics (topic_id, grant_id)
-VALUES ($1, $2)
-RETURNING topic_id, grant_id;
+SELECT $2, g.id
+FROM grants g
+WHERE g.id = $1
+AND g.grant_writer_id = $3;
 
 -- name: AddTopicToClient :one
 INSERT INTO clients_topics (topic_id, client_id)

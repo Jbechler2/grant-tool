@@ -11,24 +11,33 @@ import (
 )
 
 type Querier interface {
+	AddTopicToClient(ctx context.Context, arg AddTopicToClientParams) (ClientsTopic, error)
+	AddTopicToGrant(ctx context.Context, arg AddTopicToGrantParams) (int64, error)
 	CountValidTokens(ctx context.Context, grantWriterID uuid.UUID) (int64, error)
 	CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateDeadline(ctx context.Context, arg CreateDeadlineParams) (GrantDeadline, error)
 	CreateGrant(ctx context.Context, arg CreateGrantParams) (Grant, error)
 	CreateToken(ctx context.Context, arg CreateTokenParams) (RefreshToken, error)
+	CreateTopic(ctx context.Context, arg CreateTopicParams) (Topic, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteAllRefreshTokens(ctx context.Context, grantWriterID uuid.UUID) error
 	DeleteApplication(ctx context.Context, arg DeleteApplicationParams) error
 	DeleteClient(ctx context.Context, arg DeleteClientParams) error
+	DeleteClientTopic(ctx context.Context, arg DeleteClientTopicParams) error
 	DeleteDeadline(ctx context.Context, arg DeleteDeadlineParams) error
 	DeleteExpiredTokens(ctx context.Context) error
 	DeleteGrant(ctx context.Context, arg DeleteGrantParams) error
+	DeleteGrantTopic(ctx context.Context, arg DeleteGrantTopicParams) error
 	DeleteRefreshToken(ctx context.Context, token string) error
+	DeleteTopic(ctx context.Context, arg DeleteTopicParams) error
 	GetAllApplicationsByClientID(ctx context.Context, arg GetAllApplicationsByClientIDParams) ([]Application, error)
 	GetAllApplicationsByUserID(ctx context.Context, grantWriterID uuid.UUID) ([]Application, error)
 	GetAllClientsByGrantWriter(ctx context.Context, grantWriterID uuid.UUID) ([]Client, error)
 	GetAllGrants(ctx context.Context, grantWriterID uuid.UUID) ([]Grant, error)
+	GetAllTopics(ctx context.Context, grantWriterID uuid.UUID) ([]GetAllTopicsRow, error)
+	GetAllTopicsByClient(ctx context.Context, arg GetAllTopicsByClientParams) ([]GetAllTopicsByClientRow, error)
+	GetAllTopicsByGrant(ctx context.Context, arg GetAllTopicsByGrantParams) ([]GetAllTopicsByGrantRow, error)
 	GetApplicationByID(ctx context.Context, arg GetApplicationByIDParams) (Application, error)
 	GetClientByID(ctx context.Context, arg GetClientByIDParams) (Client, error)
 	GetDeadlinesByGrantID(ctx context.Context, arg GetDeadlinesByGrantIDParams) ([]GrantDeadline, error)

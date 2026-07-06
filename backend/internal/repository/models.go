@@ -216,6 +216,11 @@ type Client struct {
 	DeletedAt     sql.NullTime   `json:"deleted_at"`
 }
 
+type ClientsTopic struct {
+	TopicID  uuid.UUID `json:"topic_id"`
+	ClientID uuid.UUID `json:"client_id"`
+}
+
 type Grant struct {
 	ID                        uuid.UUID       `json:"id"`
 	GrantWriterID             uuid.UUID       `json:"grant_writer_id"`
@@ -242,6 +247,11 @@ type GrantDeadline struct {
 	CreatedAt   time.Time         `json:"created_at"`
 }
 
+type GrantsTopic struct {
+	TopicID uuid.UUID `json:"topic_id"`
+	GrantID uuid.UUID `json:"grant_id"`
+}
+
 type RefreshToken struct {
 	ID            uuid.UUID      `json:"id"`
 	GrantWriterID uuid.UUID      `json:"grant_writer_id"`
@@ -250,6 +260,12 @@ type RefreshToken struct {
 	IpAddress     pqtype.Inet    `json:"ip_address"`
 	CreatedAt     time.Time      `json:"created_at"`
 	ExpiresAt     time.Time      `json:"expires_at"`
+}
+
+type Topic struct {
+	ID            uuid.UUID `json:"id"`
+	GrantWriterID uuid.UUID `json:"grant_writer_id"`
+	Label         string    `json:"label"`
 }
 
 type User struct {

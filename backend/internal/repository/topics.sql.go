@@ -29,22 +29,26 @@ func (q *Queries) AddTopicToClient(ctx context.Context, arg AddTopicToClientPara
 	return i, err
 }
 
-const addTopicToGrant = `-- name: AddTopicToGrant :one
+const addTopicToGrant = `-- name: AddTopicToGrant :execrows
 INSERT INTO grants_topics (topic_id, grant_id)
-VALUES ($1, $2)
-RETURNING topic_id, grant_id
+SELECT $2, g.id
+FROM grants g
+WHERE g.id = $1
+AND g.grant_writer_id = $3
 `
 
 type AddTopicToGrantParams struct {
-	TopicID uuid.UUID `json:"topic_id"`
-	GrantID uuid.UUID `json:"grant_id"`
+	ID            uuid.UUID `json:"id"`
+	TopicID       uuid.UUID `json:"topic_id"`
+	GrantWriterID uuid.UUID `json:"grant_writer_id"`
 }
 
-func (q *Queries) AddTopicToGrant(ctx context.Context, arg AddTopicToGrantParams) (GrantsTopic, error) {
-	row := q.db.QueryRowContext(ctx, addTopicToGrant, arg.TopicID, arg.GrantID)
-	var i GrantsTopic
-	err := row.Scan(&i.TopicID, &i.GrantID)
-	return i, err
+func (q *Queries) AddTopicToGrant(ctx context.Context, arg AddTopicToGrantParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, addTopicToGrant, arg.ID, arg.TopicID, arg.GrantWriterID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const createTopic = `-- name: CreateTopic :one

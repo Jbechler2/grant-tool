@@ -29,6 +29,11 @@ export interface Grant{
   updated_at: string
 }
 
+export interface Topic{
+  id: string
+  label: string
+}
+
 export interface Deadline {
   id: string
   grant_id: string

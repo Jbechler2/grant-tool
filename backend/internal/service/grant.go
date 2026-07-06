@@ -15,6 +15,7 @@ var (
 	ErrGrantNotFound        = errors.New("grant not found")
 	ErrGrantUnauthorized    = errors.New("unauthorized access to grant")
 	ErrInvalidDeadlineLabel = errors.New("invalid deadline label")
+	ErrForbiddenOrNotFound  = errors.New("forbidden access or grant doesn't exist")
 )
 
 type GrantService struct {
@@ -39,6 +40,11 @@ type Grant struct {
 	Visibility                string
 	CreatedAt                 time.Time
 	UpdatedAt                 time.Time
+}
+
+type GrantTopic struct {
+	GrantID uuid.UUID
+	TopicID uuid.UUID
 }
 
 type CreateGrantInput struct {
@@ -132,6 +138,40 @@ func (s *GrantService) GetAllGrants(ctx context.Context, grantWriterID uuid.UUID
 	}
 
 	return grants, nil
+}
+
+func (s *GrantService) GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]Topic, error) {
+	records, err := s.repo.GetAllTopicsByGrant(ctx, repository.GetAllTopicsByGrantParams{
+		GrantWriterID: grantWriterID,
+		GrantID:       grantID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	topics := make([]Topic, len(records))
+	for i, record := range records {
+		topics[i] = *toTopicResponseFromGetAllTopicsByGrantRow(record)
+	}
+
+	return topics, nil
+}
+
+func (s *GrantService) AddTopic(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error {
+	rowCount, err := s.repo.AddTopicToGrant(ctx, repository.AddTopicToGrantParams{
+		ID:            grantID,
+		TopicID:       topicID,
+		GrantWriterID: grantWriterID,
+	})
+	if err != nil {
+		return nil
+	}
+	if rowCount == 0 {
+		return ErrForbiddenOrNotFound
+	}
+
+	return nil
 }
 
 func (s *GrantService) UpdateGrant(ctx context.Context, input UpdateGrantInput) (*Grant, error) {
@@ -284,6 +324,13 @@ func toGrantResponse(g repository.Grant) *Grant {
 		EstimatedApplicationHours: nullStringToFloat64(g.EstimatedApplicationHours),
 		CreatedAt:                 g.CreatedAt,
 		UpdatedAt:                 g.UpdatedAt,
+	}
+}
+
+func toTopicResponseFromGetAllTopicsByGrantRow(g repository.GetAllTopicsByGrantRow) *Topic {
+	return &Topic{
+		ID:    g.ID,
+		Label: g.Label,
 	}
 }
 
