@@ -44,6 +44,36 @@ func (s *TopicService) CreateTopic(ctx context.Context, input CreateTopicInput) 
 	return toTopicResponseFromRepositoryTopic(record), nil
 }
 
+func (s *TopicService) GetAllTopics(ctx context.Context, grantWriterID uuid.UUID) ([]Topic, error) {
+	records, err := s.repo.GetAllTopics(ctx, grantWriterID)
+	if err != nil {
+		return nil, err
+	}
+
+	topics := make([]Topic, len(records))
+	for i, record := range records {
+		topics[i] = *toTopicResponseFromGetAllTopicsRow(record)
+	}
+
+	return topics, nil
+}
+
+func (s *TopicService) UpdateTopic(ctx context.Context, grantWriterID uuid.UUID, topicID uuid.UUID, newLabel string) (*Topic, error) {
+	record, err := s.repo.UpdateTopic(ctx, repository.UpdateTopicParams{
+		GrantWriterID: grantWriterID,
+		ID:            topicID,
+		Label:         newLabel,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrTopicNotFound
+		}
+		return nil, err
+	}
+
+	return toTopicResponseFromUpdateTopic(record), nil
+}
+
 func (s *TopicService) DeleteTopic(ctx context.Context, grantWriterID uuid.UUID, topicID uuid.UUID) error {
 	err := s.repo.DeleteTopic(ctx, repository.DeleteTopicParams{
 		GrantWriterID: grantWriterID,
@@ -51,9 +81,6 @@ func (s *TopicService) DeleteTopic(ctx context.Context, grantWriterID uuid.UUID,
 	})
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrGrantNotFound
-		}
 		return err
 	}
 
@@ -65,5 +92,19 @@ func toTopicResponseFromRepositoryTopic(topic repository.Topic) *Topic {
 		ID:            topic.ID,
 		Label:         topic.Label,
 		GrantWriterID: topic.GrantWriterID,
+	}
+}
+
+func toTopicResponseFromGetAllTopicsRow(topic repository.GetAllTopicsRow) *Topic {
+	return &Topic{
+		ID:    topic.ID,
+		Label: topic.Label,
+	}
+}
+
+func toTopicResponseFromUpdateTopic(topic repository.UpdateTopicRow) *Topic {
+	return &Topic{
+		ID:    topic.ID,
+		Label: topic.Label,
 	}
 }

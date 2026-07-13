@@ -29,10 +29,19 @@ FROM grants g
 WHERE g.id = $1
 AND g.grant_writer_id = $3;
 
--- name: AddTopicToClient :one
+-- name: AddTopicToClient :execrows
 INSERT INTO clients_topics (topic_id, client_id)
-VALUES ($1, $2)
-RETURNING topic_id, client_id;
+SELECT $2, c.id
+FROM clients c
+WHERE c.id = $1
+AND c.grant_writer_id = $3;
+
+-- name: UpdateTopic :one
+UPDATE topics
+SET label = $3
+WHERE id = $1
+AND grant_writer_id = $2
+RETURNING id, label;
 
 -- name: DeleteGrantTopic :exec
 DELETE FROM grants_topics gt

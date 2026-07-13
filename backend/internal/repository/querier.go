@@ -11,7 +11,7 @@ import (
 )
 
 type Querier interface {
-	AddTopicToClient(ctx context.Context, arg AddTopicToClientParams) (ClientsTopic, error)
+	AddTopicToClient(ctx context.Context, arg AddTopicToClientParams) (int64, error)
 	AddTopicToGrant(ctx context.Context, arg AddTopicToGrantParams) (int64, error)
 	CountValidTokens(ctx context.Context, grantWriterID uuid.UUID) (int64, error)
 	CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error)
@@ -50,6 +50,7 @@ type Querier interface {
 	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
 	UpdateGrant(ctx context.Context, arg UpdateGrantParams) (Grant, error)
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error
+	UpdateTopic(ctx context.Context, arg UpdateTopicParams) (UpdateTopicRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

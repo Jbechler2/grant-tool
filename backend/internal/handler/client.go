@@ -18,6 +18,9 @@ type ClientServicer interface {
 	GetAllClients(ctx context.Context, grantWriterID uuid.UUID) ([]service.Client, error)
 	UpdateClient(ctx context.Context, input service.UpdateClientInput) (*service.Client, error)
 	DeleteClient(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) error
+	GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) ([]service.Topic, error)
+	AddTopic(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error
+	DeleteTopicFromClient(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error
 }
 
 type ClientHandler struct {
@@ -262,6 +265,142 @@ func (h *ClientHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "failed to delete client")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ClientHandler) GetAllTopicsByClient(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	clientIDString := chi.URLParam(r, "id")
+	if clientIDString == "" {
+		writeError(w, http.StatusBadRequest, "no client id provided")
+		return
+	}
+
+	clientID, err := uuid.Parse(clientIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid client id")
+		return
+	}
+
+	results, err := h.clientService.GetAllTopics(r.Context(), grantWriterID, clientID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to retrieve topics")
+		return
+	}
+
+	topics := make([]topicResponse, len(results))
+	for i, t := range results {
+		topics[i] = *toTopicResponse(&t)
+	}
+
+	writeJSON(w, http.StatusOK, topics)
+}
+
+func (h *ClientHandler) AddTopicToClient(w http.ResponseWriter, r *http.Request) {
+	var req addTopicRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	clientIDString := chi.URLParam(r, "id")
+	if clientIDString == "" {
+		writeError(w, http.StatusBadRequest, "no client id provided")
+		return
+	}
+
+	clientID, err := uuid.Parse(clientIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid client id")
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	topicID, err := uuid.Parse(req.ID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid topic id")
+		return
+	}
+
+	err = h.clientService.AddTopic(r.Context(), grantWriterID, clientID, topicID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to add topic to client")
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *ClientHandler) DeleteTopicFromClient(w http.ResponseWriter, r *http.Request) {
+	clientIDString := chi.URLParam(r, "clientID")
+	if clientIDString == "" {
+		writeError(w, http.StatusBadRequest, "no client id provided")
+		return
+	}
+
+	clientID, err := uuid.Parse(clientIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid client id")
+		return
+	}
+
+	topicIDString := chi.URLParam(r, "topicID")
+	if topicIDString == "" {
+		writeError(w, http.StatusBadRequest, "no client id provided")
+		return
+	}
+
+	topicID, err := uuid.Parse(topicIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid client id")
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	err = h.clientService.DeleteTopicFromClient(r.Context(), grantWriterID, clientID, topicID)
+	if err != nil {
+		if errors.Is(err, service.ErrClientNotFound) {
+			writeError(w, http.StatusNotFound, "client not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to delete topic")
 		return
 	}
 

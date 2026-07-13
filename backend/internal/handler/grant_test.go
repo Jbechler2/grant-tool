@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -76,6 +77,30 @@ func (m *mockGrantService) GetDeadlinesByGrantID(ctx context.Context, grantWrite
 }
 
 func (m *mockGrantService) DeleteDeadline(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, deadlineID uuid.UUID) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	return nil
+}
+
+func (m *mockGrantService) GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Topic, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return []service.Topic{{ID: uuid.New(), Label: "New Topic"}}, nil
+}
+
+func (m *mockGrantService) AddTopic(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	return nil
+}
+
+func (m *mockGrantService) DeleteTopicFromGrant(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error {
 	if m.err != nil {
 		return m.err
 	}
@@ -356,7 +381,7 @@ func TestDeleteGrant(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "valid - 200",
+			name:           "valid - 204",
 			userId:         validUserId,
 			grantId:        validGrantId,
 			err:            nil,
@@ -595,7 +620,7 @@ func TestDeleteDeadline(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "valid - 200",
+			name:           "valid - 204",
 			userId:         validUserId,
 			grantId:        validGrantId,
 			deadlineId:     validDeadlineId,
@@ -653,6 +678,235 @@ func TestDeleteDeadline(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			handler.DeleteDeadline(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestGetAllGrantTopics(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		grantId        string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 200",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			err:            nil,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			grantId:        validGrantId,
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid grant id - 400",
+			userId:         validUserId,
+			grantId:        invalidGrantId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewGrantHandler(&mockGrantService{tt.err})
+
+			req := httptest.NewRequest(http.MethodGet, "/grants/"+tt.grantId+"/topics", nil)
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.grantId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.GetAllTopicsByGrant(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestAddTopicToGrant(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		grantId        string
+		body           string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 201",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "missing id - 400",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			body:           `{}`,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid topic id - 400",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, invalidTopicId),
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			grantId:        validGrantId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid grant id - 400",
+			userId:         validUserId,
+			grantId:        invalidGrantId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewGrantHandler(&mockGrantService{tt.err})
+
+			req := httptest.NewRequest(http.MethodPost, "/grants/"+tt.grantId+"/topics", strings.NewReader(tt.body))
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.grantId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.AddTopicToGrant(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestDeleteTopicFromGrant(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		grantId        string
+		topicId        string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 204",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			grantId:        validGrantId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid topic id - 400",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			topicId:        invalidTopicId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid grant id - 400",
+			userId:         validUserId,
+			grantId:        invalidGrantId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "grant not found - 404",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			topicId:        validTopicId,
+			err:            service.ErrGrantNotFound,
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			grantId:        validGrantId,
+			topicId:        validTopicId,
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewGrantHandler(&mockGrantService{tt.err})
+
+			req := httptest.NewRequest(http.MethodDelete, "/grants/"+tt.grantId+"/topics/"+tt.topicId, nil)
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("grantID", tt.grantId)
+			rctx.URLParams.Add("topicID", tt.topicId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.DeleteTopicFromGrant(rr, req)
 
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)

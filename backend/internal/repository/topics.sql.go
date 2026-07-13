@@ -11,22 +11,26 @@ import (
 	"github.com/google/uuid"
 )
 
-const addTopicToClient = `-- name: AddTopicToClient :one
+const addTopicToClient = `-- name: AddTopicToClient :execrows
 INSERT INTO clients_topics (topic_id, client_id)
-VALUES ($1, $2)
-RETURNING topic_id, client_id
+SELECT $2, c.id
+FROM clients c
+WHERE c.id = $1
+AND c.grant_writer_id = $3
 `
 
 type AddTopicToClientParams struct {
-	TopicID  uuid.UUID `json:"topic_id"`
-	ClientID uuid.UUID `json:"client_id"`
+	ID            uuid.UUID `json:"id"`
+	TopicID       uuid.UUID `json:"topic_id"`
+	GrantWriterID uuid.UUID `json:"grant_writer_id"`
 }
 
-func (q *Queries) AddTopicToClient(ctx context.Context, arg AddTopicToClientParams) (ClientsTopic, error) {
-	row := q.db.QueryRowContext(ctx, addTopicToClient, arg.TopicID, arg.ClientID)
-	var i ClientsTopic
-	err := row.Scan(&i.TopicID, &i.ClientID)
-	return i, err
+func (q *Queries) AddTopicToClient(ctx context.Context, arg AddTopicToClientParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, addTopicToClient, arg.ID, arg.TopicID, arg.GrantWriterID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const addTopicToGrant = `-- name: AddTopicToGrant :execrows
@@ -239,4 +243,30 @@ func (q *Queries) GetAllTopicsByGrant(ctx context.Context, arg GetAllTopicsByGra
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTopic = `-- name: UpdateTopic :one
+UPDATE topics
+SET label = $3
+WHERE id = $1
+AND grant_writer_id = $2
+RETURNING id, label
+`
+
+type UpdateTopicParams struct {
+	ID            uuid.UUID `json:"id"`
+	GrantWriterID uuid.UUID `json:"grant_writer_id"`
+	Label         string    `json:"label"`
+}
+
+type UpdateTopicRow struct {
+	ID    uuid.UUID `json:"id"`
+	Label string    `json:"label"`
+}
+
+func (q *Queries) UpdateTopic(ctx context.Context, arg UpdateTopicParams) (UpdateTopicRow, error) {
+	row := q.db.QueryRowContext(ctx, updateTopic, arg.ID, arg.GrantWriterID, arg.Label)
+	var i UpdateTopicRow
+	err := row.Scan(&i.ID, &i.Label)
+	return i, err
 }

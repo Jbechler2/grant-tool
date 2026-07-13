@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Users, FileText, ClipboardList, LogOut, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react'
+import { Users, FileText, ClipboardList, LogOut, ChevronLeft, ChevronRight, Menu, X, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import apiClient from '@/lib/api'
 import { useState } from 'react'
+import EditTopics from './EditTopics'
+
 
 const navigation = [
   { name: 'Clients', href: '/clients', icon: Users},
@@ -20,6 +22,7 @@ export default function Sidebar() {
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [editTopicsOpen, setEditTopicsOpen] = useState(false)
 
   const handleLogout = async () => {
     await apiClient.post('/auth/logout')
@@ -101,6 +104,48 @@ export default function Sidebar() {
           })}
         </nav>
 
+        <div className='px-2 py-4'>
+          {/* <Popover>
+            <PopoverTrigger>
+              <Button
+                variant='ghost'
+                className={cn(
+                  'w-full gap-3 text-gray-600 hover:text-gray-900',
+                  isCollapsed ? 'md:justify-center md:px-2' : 'justify-start'
+                )}
+              >
+                <Settings className='h-5 w-5 flex-shrink-0' />
+                <span className={cn(isCollapsed && 'md:hidden')}>Settings</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[200px] p-0">
+                <Button
+                variant='ghost'
+                className={cn(
+                  'w-full gap-3 text-gray-600 hover:text-gray-900',
+                  isCollapsed ? 'md:justify-center md:px-2' : 'justify-start'
+                )}
+              >
+                <Settings className='h-5 w-5 flex-shrink-0' />
+                <span className={cn(isCollapsed && 'md:hidden')}>Edit Topics</span>
+              </Button>
+            </PopoverContent>
+          </Popover> */}
+          <Button
+            variant='ghost'
+            className={cn(
+              'w-full gap-3 text-gray-600 hover:text-gray-900',
+              isCollapsed ? 'md:justify-center md:px-2' : 'justify-start'
+            )}
+            onClick={() => {
+              setEditTopicsOpen(true)
+            }}
+          >
+            <Settings className='h-5 w-5 flex-shrink-0' />
+            <span className={cn(isCollapsed && 'md:hidden')}>Settings</span>
+          </Button>
+        </div>
+
         <div className='px-2 py-4 border-t border-gray-200'>
           <Button
             variant='ghost'
@@ -115,6 +160,7 @@ export default function Sidebar() {
           </Button>
         </div>
       </div>
+      <EditTopics open={editTopicsOpen} onOpenChange={setEditTopicsOpen} />
     </>
   )
 }

@@ -16,6 +16,7 @@ var (
 	ErrGrantUnauthorized    = errors.New("unauthorized access to grant")
 	ErrInvalidDeadlineLabel = errors.New("invalid deadline label")
 	ErrForbiddenOrNotFound  = errors.New("forbidden access or grant doesn't exist")
+	ErrGrantTopicNotFound   = errors.New("topic doesn't exist on grant")
 )
 
 type GrantService struct {
@@ -165,7 +166,7 @@ func (s *GrantService) AddTopic(ctx context.Context, grantWriterID uuid.UUID, gr
 		GrantWriterID: grantWriterID,
 	})
 	if err != nil {
-		return nil
+		return err
 	}
 	if rowCount == 0 {
 		return ErrForbiddenOrNotFound
@@ -220,6 +221,20 @@ func (s *GrantService) DeleteGrant(ctx context.Context, grantWriterID uuid.UUID,
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrGrantNotFound
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *GrantService) DeleteTopicFromGrant(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error {
+	err := s.repo.DeleteGrantTopic(ctx, repository.DeleteGrantTopicParams{
+		GrantWriterID: grantWriterID,
+		GrantID:       grantID,
+		TopicID:       topicID,
+	})
+
+	if err != nil {
 		return err
 	}
 
