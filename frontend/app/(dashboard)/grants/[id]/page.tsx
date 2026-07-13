@@ -1,4 +1,6 @@
-import { getGrant } from "@/lib/grant";
+import { addTopicToGrant, getGrant, getGrantTopics, removeTopicFromGrant } from "@/lib/grant";
+import TopicsPicker from "@/app/components/features/TopicsPicker"
+import { getAllTopics } from "@/lib/topic";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -7,7 +9,9 @@ type Props = {
 export default async function GrantDetails({ params }: Props){
   const { id } = await params;
   const grant = await getGrant(id);
-  console.log(grant)
+  const grant_topics = await getGrantTopics(id)
+  const all_topics = await getAllTopics()
+
 
   // PLACEHOLDER
   const potentialClients = [
@@ -24,26 +28,6 @@ export default async function GrantDetails({ params }: Props){
       "name": "Purses with a Purpose"
     }
   ]
-  
-  const topics = [
-    {
-      "id": 1,
-      "text": "Community Improvement"
-    },
-    {
-      "id": 2,
-      "text": "Basic Needs"
-    },
-    {
-      "id": 3,
-      "text": "Workforce Development"
-    },
-    {
-      "id": 4,
-      "text": "Arts & Culture"
-    },
-  ]
-
 
   return (
     <div className="flex flex-row w-full justify-between">
@@ -51,11 +35,8 @@ export default async function GrantDetails({ params }: Props){
         <div className="bg-white w-150 p-5 rounded-lg border-2">
           <h1 className="text-xl font-bold">{grant.title}</h1>
           <h3 className="text-sm italic mb-4">{grant.funder_name}</h3>
-          <div className="flex flex-row gap-2">
-            {topics.map(topic => (
-              <h5 key={topic.id} className="bg-green-200 w-fit px-2 py-1 rounded-md text-gray-500">{topic.text}</h5>  
-            ))}
-          </div>
+          <TopicsPicker parentId={ id } initialTopics={ grant_topics } allTopics={ all_topics } addTopic={addTopicToGrant} removeTopic={removeTopicFromGrant}></TopicsPicker>
+          
         </div>
         <div className="bg-white w-100 p-5 rounded-lg border-2 mt-3">
           <h1 className="text-xl font-bold">Grant Amount</h1>

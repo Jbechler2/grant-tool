@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jbechler2/grant-tool/backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
@@ -132,12 +132,13 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 }
 
 func (s *AuthService) generateToken(user repository.User) (string, error) {
+	now := time.Now()
 	claims := jwt.MapClaims{
 		"sub":   user.ID.String(),
 		"email": user.Email,
 		"role":  user.Role,
-		"exp":   time.Now().Add(s.jwtExpiry).Unix(),
-		"iat":   time.Now().Unix(),
+		"exp":   now.Add(s.jwtExpiry).Unix(),
+		"iat":   now,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

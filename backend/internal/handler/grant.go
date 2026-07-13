@@ -22,6 +22,9 @@ type GrantServicer interface {
 	AddDeadline(ctx context.Context, input service.AddDeadlineInput) (*service.Deadline, error)
 	GetDeadlinesByGrantID(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Deadline, error)
 	DeleteDeadline(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, deadlineID uuid.UUID) error
+	AddTopic(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error
+	GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID) ([]service.Topic, error)
+	DeleteTopicFromGrant(ctx context.Context, grantWriterID uuid.UUID, grantID uuid.UUID, topicID uuid.UUID) error
 }
 
 type GrantHandler struct {
@@ -61,6 +64,10 @@ type addDeadlineRequest struct {
 	Description *string `json:"description"`
 }
 
+type addTopicRequest struct {
+	ID string `json:"id"`
+}
+
 type grantResponse struct {
 	ID                        string    `json:"id"`
 	GrantWriterID             string    `json:"grant_writer_id"`
@@ -84,6 +91,12 @@ type deadlineResponse struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type topicResponse struct {
+	ID            string `json:"id"`
+	GrantWriterID string `json:"grant_writer_id"`
+	Label         string `json:"label"`
 }
 
 func (h *GrantHandler) CreateGrant(w http.ResponseWriter, r *http.Request) {
@@ -303,6 +316,56 @@ func (h *GrantHandler) DeleteGrant(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *GrantHandler) DeleteTopicFromGrant(w http.ResponseWriter, r *http.Request) {
+	grantIDString := chi.URLParam(r, "grantID")
+	if grantIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	grantID, err := uuid.Parse(grantIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	topicIDString := chi.URLParam(r, "topicID")
+	if topicIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	topicID, err := uuid.Parse(topicIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	err = h.grantService.DeleteTopicFromGrant(r.Context(), grantWriterID, grantID, topicID)
+	if err != nil {
+		if errors.Is(err, service.ErrGrantNotFound) {
+			writeError(w, http.StatusNotFound, "grant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "failed to delete topic from grant")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *GrantHandler) AddDeadline(w http.ResponseWriter, r *http.Request) {
 	var req addDeadlineRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -463,6 +526,92 @@ func (h *GrantHandler) DeleteDeadline(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *GrantHandler) GetAllTopicsByGrant(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.UserIDFromContext(r.Context())
+
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantIDString := chi.URLParam(r, "id")
+	if grantIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	grantID, err := uuid.Parse(grantIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	results, err := h.grantService.GetAllTopics(r.Context(), grantWriterID, grantID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to retrieve topics")
+		return
+	}
+
+	topics := make([]topicResponse, len(results))
+	for i, t := range results {
+		topics[i] = *toTopicResponse(&t)
+	}
+
+	writeJSON(w, http.StatusOK, topics)
+}
+
+func (h *GrantHandler) AddTopicToGrant(w http.ResponseWriter, r *http.Request) {
+	var req addTopicRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	grantIDString := chi.URLParam(r, "id")
+	if grantIDString == "" {
+		writeError(w, http.StatusBadRequest, "no grant id provided")
+		return
+	}
+
+	grantID, err := uuid.Parse(grantIDString)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid grant id")
+		return
+	}
+
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	grantWriterID, err := uuid.Parse(userID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	topicID, err := uuid.Parse(req.ID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid topic id")
+		return
+	}
+
+	err = h.grantService.AddTopic(r.Context(), grantWriterID, grantID, topicID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to add topic to client")
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func toGrantResponse(g *service.Grant) *grantResponse {
 	return &grantResponse{
 		ID:                        g.ID.String(),
@@ -478,6 +627,14 @@ func toGrantResponse(g *service.Grant) *grantResponse {
 		Visibility:                g.Visibility,
 		CreatedAt:                 g.CreatedAt,
 		UpdatedAt:                 g.UpdatedAt,
+	}
+}
+
+func toTopicResponse(t *service.Topic) *topicResponse {
+	return &topicResponse{
+		ID:            t.ID.String(),
+		GrantWriterID: t.GrantWriterID.String(),
+		Label:         t.Label,
 	}
 }
 

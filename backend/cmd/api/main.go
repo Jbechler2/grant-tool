@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,6 +31,8 @@ func main() {
 	clientService := service.NewClientService(queries)
 	clientHandler := handler.NewClientHandler(clientService)
 	grantService := service.NewGrantService(queries)
+	topicService := service.NewTopicService(queries)
+	topicHandler := handler.NewTopicHandler(topicService)
 	grantHandler := handler.NewGrantHandler(grantService)
 	applicationService := service.NewApplicationService(queries)
 	applicationHandler := handler.NewApplicationHandler(applicationService)
@@ -67,6 +70,9 @@ func main() {
 			r.Put("/clients/{id}", clientHandler.UpdateClient)
 			r.Delete("/clients/{id}", clientHandler.DeleteClient)
 			r.Get("/clients/{id}/applications", applicationHandler.GetAllApplicationsByClientID)
+			r.Get("/clients/{id}/topics", clientHandler.GetAllTopicsByClient)
+			r.Post("/clients/{id}/topics", clientHandler.AddTopicToClient)
+			r.Delete("/clients/{clientID}/topics/{topicID}", clientHandler.DeleteTopicFromClient)
 
 			r.Post("/grants", grantHandler.CreateGrant)
 			r.Get("/grants", grantHandler.GetAllGrants)
@@ -76,6 +82,14 @@ func main() {
 			r.Get("/grants/{id}/deadlines", grantHandler.GetDeadlinesByGrantID)
 			r.Post("/grants/{id}/deadlines", grantHandler.AddDeadline)
 			r.Delete("/grants/{id}/deadlines/{deadlineID}", grantHandler.DeleteDeadline)
+			r.Get("/grants/{id}/topics", grantHandler.GetAllTopicsByGrant)
+			r.Post("/grants/{id}/topics", grantHandler.AddTopicToGrant)
+			r.Delete("/grants/{grantID}/topics/{topicID}", grantHandler.DeleteTopicFromGrant)
+
+			r.Get("/topics", topicHandler.GetAllTopics)
+			r.Post("/topics", topicHandler.CreateTopic)
+			r.Put("/topics/{id}", topicHandler.UpdateTopic)
+			r.Delete("/topics/{id}", topicHandler.DeleteTopic)
 
 			r.Post("/applications", applicationHandler.CreateApplication)
 			r.Get("/applications", applicationHandler.GetAllApplicationsByUserID)
@@ -109,6 +123,12 @@ func main() {
 		}
 	}()
 
-	log.Println("grant-tool API listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("grant-tool API listening on :", port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }

@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -52,6 +53,30 @@ func (m *mockClientService) DeleteClient(ctx context.Context, grantWriterID uuid
 	if m.err != nil {
 		return m.err
 	}
+	return nil
+}
+
+func (m *mockClientService) GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) ([]service.Topic, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return []service.Topic{{ID: uuid.New(), Label: "New Topic"}}, nil
+}
+
+func (m *mockClientService) AddTopic(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error {
+	if m.err != nil {
+		return m.err
+	}
+
+	return nil
+}
+
+func (m *mockClientService) DeleteTopicFromClient(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error {
+	if m.err != nil {
+		return m.err
+	}
+
 	return nil
 }
 
@@ -329,7 +354,7 @@ func TestDeleteClient(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "valid - 200",
+			name:           "valid - 204",
 			userId:         validUserId,
 			clientId:       validClientId,
 			err:            nil,
@@ -381,6 +406,235 @@ func TestDeleteClient(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			handler.DeleteClient(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestGetAllClientTopics(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		clientId       string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 200",
+			userId:         validUserId,
+			clientId:       validClientId,
+			err:            nil,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			clientId:       validClientId,
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid client id - 400",
+			userId:         validUserId,
+			clientId:       invalidClientId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			clientId:       validClientId,
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewClientHandler(&mockClientService{tt.err})
+
+			req := httptest.NewRequest(http.MethodGet, "/clients/"+tt.clientId+"/topics", nil)
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.clientId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.GetAllTopicsByClient(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestAddTopicToClient(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		clientId       string
+		body           string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 201",
+			userId:         validUserId,
+			clientId:       validClientId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "missing id - 400",
+			userId:         validUserId,
+			clientId:       validClientId,
+			body:           `{}`,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid topic id - 400",
+			userId:         validUserId,
+			clientId:       validClientId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, invalidTopicId),
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			clientId:       validClientId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid client id - 400",
+			userId:         validUserId,
+			clientId:       invalidClientId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			clientId:       validClientId,
+			body:           fmt.Sprintf(`{"id": "%s"}`, validTopicId),
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewClientHandler(&mockClientService{tt.err})
+
+			req := httptest.NewRequest(http.MethodPost, "/clients/"+tt.clientId+"/topics", strings.NewReader(tt.body))
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("id", tt.clientId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.AddTopicToClient(rr, req)
+
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}
+
+func TestDeleteTopicFromClient(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		clientId       string
+		topicId        string
+		err            error
+		expectedStatus int
+	}{
+		{
+			name:           "valid - 204",
+			userId:         validUserId,
+			clientId:       validClientId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid user id - 401",
+			userId:         invalidUserId,
+			clientId:       validClientId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name:           "invalid topic id - 400",
+			userId:         validUserId,
+			clientId:       validClientId,
+			topicId:        invalidTopicId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid client id - 400",
+			userId:         validUserId,
+			clientId:       invalidClientId,
+			topicId:        validTopicId,
+			err:            nil,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "client not found - 404",
+			userId:         validUserId,
+			clientId:       validClientId,
+			topicId:        validTopicId,
+			err:            service.ErrClientNotFound,
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "service error - 500",
+			userId:         validUserId,
+			clientId:       validClientId,
+			topicId:        validTopicId,
+			err:            errors.New("db connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := handler.NewClientHandler(&mockClientService{tt.err})
+
+			req := httptest.NewRequest(http.MethodDelete, "/clients/"+tt.clientId+"/topics/"+tt.topicId, nil)
+
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("clientID", tt.clientId)
+			rctx.URLParams.Add("topicID", tt.topicId)
+
+			ctx := context.WithValue(req.Context(), auth.ContextKeyUserID, tt.userId)
+			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
+			req = req.WithContext(ctx)
+
+			rr := httptest.NewRecorder()
+
+			handler.DeleteTopicFromClient(rr, req)
 
 			if rr.Code != tt.expectedStatus {
 				t.Errorf("expected %d, got %d", tt.expectedStatus, rr.Code)

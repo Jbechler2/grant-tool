@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
@@ -36,13 +36,12 @@ func (m *JWTMiddleware) verify(next http.Handler) http.Handler {
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrSignatureInvalid
+				return nil, jwt.ErrTokenSignatureInvalid
 			}
 			return []byte(m.secret), nil
 		})
 		if err != nil || !token.Valid {
-			var ve *jwt.ValidationError
-			if errors.As(err, &ve) && ve.Errors&jwt.ValidationErrorExpired != 0 {
+			if errors.Is(err, jwt.ErrTokenExpired) {
 				writeTokenExpired(w)
 			} else {
 				writeUnauthorized(w)

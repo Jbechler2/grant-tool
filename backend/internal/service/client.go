@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrClientNotFound     = errors.New("client not found")
-	ErrClientUnauthorized = errors.New("unauthorized access to client")
+	ErrClientNotFound      = errors.New("client not found")
+	ErrClientUnauthorized  = errors.New("unauthorized access to client")
+	ErrClientTopicNotFound = errors.New("topic doesn't exist on client")
 )
 
 type ClientService struct {
@@ -134,9 +135,54 @@ func (s *ClientService) DeleteClient(ctx context.Context, grantWriterID uuid.UUI
 		ID:            clientID,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrClientNotFound
-		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *ClientService) GetAllTopics(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID) ([]Topic, error) {
+	records, err := s.repo.GetAllTopicsByClient(ctx, repository.GetAllTopicsByClientParams{
+		GrantWriterID: grantWriterID,
+		ClientID:      clientID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	topics := make([]Topic, len(records))
+	for i, record := range records {
+		topics[i] = Topic{ID: record.ID, Label: record.Label}
+	}
+
+	return topics, nil
+}
+
+func (s *ClientService) AddTopic(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error {
+	rowCount, err := s.repo.AddTopicToClient(ctx, repository.AddTopicToClientParams{
+		ID:            clientID,
+		TopicID:       topicID,
+		GrantWriterID: grantWriterID,
+	})
+	if err != nil {
+		return err
+	}
+	if rowCount == 0 {
+		return ErrForbiddenOrNotFound
+	}
+
+	return nil
+}
+
+func (s *ClientService) DeleteTopicFromClient(ctx context.Context, grantWriterID uuid.UUID, clientID uuid.UUID, topicID uuid.UUID) error {
+	err := s.repo.DeleteClientTopic(ctx, repository.DeleteClientTopicParams{
+		GrantWriterID: grantWriterID,
+		ClientID:      clientID,
+		TopicID:       topicID,
+	})
+
+	if err != nil {
 		return err
 	}
 
