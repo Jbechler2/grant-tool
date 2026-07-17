@@ -46,8 +46,7 @@ export async function addTopicToGrant(grantID: string, id: string) {
   if (!res.ok){
     const errorBody = await res.text().catch(() => null);
     throw new Error(`Failed to add topic to grant: ${res.status} ${errorBody ?? ''}`);
-  } 
-  return res.json();
+  }
 }
 
 export async function removeTopicFromGrant(grantID: string, topicID: string) {
