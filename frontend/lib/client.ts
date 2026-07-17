@@ -45,9 +45,8 @@ export async function addTopicToClient(clientID: string, id: string) {
 
   if (!res.ok){
     const errorBody = await res.text().catch(() => null);
-    throw new Error(`Failed to add topic to grant: ${res.status} ${errorBody ?? ''}`);
-  } 
-  return res.json();
+    throw new Error(`Failed to add topic to client: ${res.status} ${errorBody ?? ''}`);
+  }
 }
 
 export async function removeTopicFromClient(clientID: string, topicID: string) {
